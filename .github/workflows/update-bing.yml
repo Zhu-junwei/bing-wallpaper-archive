@@ -23,11 +23,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          current_time=$(TZ='Asia/Shanghai' date +"%Y-%m-%d %H:%M:%S (UTC+8)")
 
           git add Bing_zh-CN_all.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Update Bing JSON at $(date '+%Y-%m-%d %H:%M:%S')"
+            git commit -m "Update Bing JSON at $current_time"
             git push
           fi

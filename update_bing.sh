@@ -4,7 +4,7 @@ old_file="Bing_zh-CN_all.json"
 new_file="Bing_new.json"
 merged_file="Bing_zh-CN_all_merged.json"
 
-# 下载最新 JSON 数据（新接口返回含有大量字段）
+# 下载最新 JSON 数据
 curl -s "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&uhd=1&mkt=zh-CN" -o "$new_file"
 
 # 提取新数据中关心的字段，并存为 __new_simplified.json

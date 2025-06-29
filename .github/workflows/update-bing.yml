@@ -25,7 +25,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           current_time=$(TZ='Asia/Shanghai' date +"%Y-%m-%d %H:%M:%S (UTC+8)")
 
-          git add Bing_zh-CN_all.json
+          git add Bing_zh-CN_all.json README.md 
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else

@@ -38,3 +38,13 @@ jq -s '
 # 替换旧文件
 mv "$merged_file" "$old_file"
 rm __new_simplified.json __new_filtered.json "$new_file"
+
+# 统计总图片数
+total_images=$(jq '.images | length' "$old_file")
+
+# 获取最新数据的 enddate（假设是排序后的第一项）
+latest_date=$(jq -r '.images[0].enddate' "$old_file")
+# 替换 README.md 中的总图片数
+sed -i "s/总图片数：\*\*[0-9]\+\*\*/总图片数：**$total_images**/" README.md
+# 替换 README.md 中的最新数据日期
+sed -i "s/最新数据日期：\*\*[0-9]\+\*\*/最新数据日期：**$latest_date**/" README.md

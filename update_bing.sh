@@ -25,6 +25,14 @@ jq --argjson existing_dates "$(jq -R -s -c 'split("\n")[:-1]' <<< "$existing_dat
   .images |= map(select(.enddate as $d | ($existing_dates | index($d) | not)))
 ' __new_simplified.json > __new_filtered.json
 
+# 如果没有新数据，退出
+new_count=$(jq '.images | length' __new_filtered.json)
+if [[ "$new_count" -eq 0 ]]; then
+  echo "✅ 没有新图片数据，无需更新。"
+  rm __new_simplified.json __new_filtered.json "$new_file"
+  exit 0
+fi
+
 # 合并两份数据，并按 enddate 倒序排列
 jq -s '
   {
@@ -37,6 +45,21 @@ jq -s '
 
 # 替换旧文件
 mv "$merged_file" "$old_file"
+
+# 🔥 拆分 __new_filtered.json 为按天的单独文件
+jq -c '.images[]' __new_filtered.json | while read -r item; do
+    enddate=$(echo "$item" | jq -r '.enddate')
+    year=${enddate:0:4}
+    month=${enddate:4:2}
+    day=${enddate:6:2}
+    # 创建目录
+    mkdir -p "$year/$month"
+    # 保存到 年/月/日.json
+    echo "{ \"images\": [ $item ] }" | jq '.' > "$year/$month/$day.json"
+    echo "📦 已保存: $year/$month/$day.json"
+done
+
+# 清理临时文件
 rm __new_simplified.json __new_filtered.json "$new_file"
 
 # 统计总图片数
@@ -48,3 +71,5 @@ latest_date=$(jq -r '.images[0].enddate' "$old_file")
 sed -i "s/总图片数：\*\*[0-9]\+\*\*/总图片数：**$total_images**/" README.md
 # 替换 README.md 中的最新数据日期
 sed -i "s/最新数据日期：\*\*[0-9]\+\*\*/最新数据日期：**$latest_date**/" README.md
+
+echo "🎉 更新和拆分完成，总图片数：$total_images"

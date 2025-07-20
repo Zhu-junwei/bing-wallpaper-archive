@@ -28,6 +28,7 @@
 
 ```text
 📁 项目根目录
+├── 20**/                       # 每天划分的 JSON 数据
 ├── Bing_zh-CN_all.json         # 所有已归档的必应壁纸 JSON 数据
 ├── update_bing.sh              # Bash 脚本：自动下载并合并 JSON 数据
 ├── 必应壁纸下载器.bat         # Windows 批处理脚本，支持交互下载壁纸

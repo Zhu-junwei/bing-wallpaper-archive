@@ -16,16 +16,22 @@ jobs:
       - name: Run update script
         run: bash update_bing.sh
 
-      - name: Commit and push changes
+      - name: Check for changes
+        id: git-check
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          current_time=$(TZ='Asia/Shanghai' date +"%Y-%m-%d %H:%M:%S (UTC+8)")
-
-          git add Bing_zh-CN_all.json README.md 
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
+          
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "has_changes=true" >> "$GITHUB_ENV"
           else
-            git commit -m "Update Bing JSON at $current_time"
-            git push
+            echo "has_changes=false" >> "$GITHUB_ENV"
           fi
+
+      - name: Commit and push changes
+        if: env.has_changes == 'true'
+        run: |
+          current_time=$(TZ='Asia/Shanghai' date +"%Y-%m-%d %H:%M:%S (UTC+8)")
+          git add -A
+          git commit -m "Update Bing JSON at $current_time"
+          git push

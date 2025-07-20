@@ -26,12 +26,12 @@ jq --argjson existing_dates "$(jq -R -s -c 'split("\n")[:-1]' <<< "$existing_dat
 ' __new_simplified.json > __new_filtered.json
 
 # 如果没有新数据，退出
-new_count=$(jq '.images | length' __new_filtered.json)
-if [[ "$new_count" -eq 0 ]]; then
-  echo "✅ 没有新图片数据，无需更新。"
-  rm __new_simplified.json __new_filtered.json "$new_file"
-  exit 0
-fi
+#new_count=$(jq '.images | length' __new_filtered.json)
+#if [[ "$new_count" -eq 0 ]]; then
+#  echo "✅ 没有新图片数据，无需更新。"
+#  rm __new_simplified.json __new_filtered.json "$new_file"
+#  exit 0
+#fi
 
 # 合并两份数据，并按 enddate 倒序排列
 jq -s '
@@ -47,7 +47,8 @@ jq -s '
 mv "$merged_file" "$old_file"
 
 # 🔥 拆分 __new_filtered.json 为按天的单独文件
-jq -c '.images[]' __new_filtered.json | while read -r item; do
+jq -c '.images[]' Bing_zh-CN_all.json | while read -r item; do
+#jq -c '.images[]' __new_filtered.json | while read -r item; do
     enddate=$(echo "$item" | jq -r '.enddate')
     year=${enddate:0:4}
     month=${enddate:4:2}

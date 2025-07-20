@@ -31,9 +31,20 @@
 ├── 20**/                       # 每天划分的 JSON 数据
 ├── Bing_zh-CN_all.json         # 所有已归档的必应壁纸 JSON 数据
 ├── update_bing.sh              # Bash 脚本：自动下载并合并 JSON 数据
-├── 必应壁纸下载器.bat         # Windows 批处理脚本，支持交互下载壁纸
+├── 必应壁纸下载器.bat           # Windows 批处理脚本，支持交互下载壁纸
 └── .github/workflows
     └── update-bing.yml         # GitHub Actions 自动每日更新任务
+```
+
+## 📥 数据获取
+
+GitHub：
+
+```
+# 全量数据
+https://raw.githubusercontent.com/Zhu-junwei/bing-wallpaper-archive/master/Bing_zh-CN_all.json
+# 指定日期数据
+https://raw.githubusercontent.com/Zhu-junwei/bing-wallpaper-archive/master/2025/07/20.json
 ```
 
 ## ⚠️ 注意事项

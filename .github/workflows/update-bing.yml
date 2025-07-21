@@ -21,7 +21,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
           if [[ -n "$(git status --porcelain)" ]]; then
             echo "has_changes=true" >> "$GITHUB_ENV"
           else
@@ -35,3 +34,16 @@ jobs:
           git add -A
           git commit -m "Update Bing JSON at $current_time"
           git push
+          
+      - name: Purge jsDelivr cache
+        if: env.has_changes == 'true'
+        run: |
+          owner="${{ github.repository_owner }}"
+          repo="${GITHUB_REPOSITORY#*/}"  # 提取仓库名部分
+          file_path="Bing_zh-CN_all.json"
+          purge_url="https://purge.jsdelivr.net/gh/${owner}/${repo}/${file_path}"
+          echo "Purging jsDelivr cache for ${owner}/${repo}/${file_path}..."
+          echo "Request: $purge_url"
+          response=$(curl -s -w "\nHTTP Status: %{http_code}\n" "$purge_url")
+          echo "Response:"
+          echo "$response"

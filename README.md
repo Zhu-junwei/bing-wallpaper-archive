@@ -45,6 +45,11 @@ GitHub：
 https://raw.githubusercontent.com/Zhu-junwei/bing-wallpaper-archive/master/Bing_zh-CN_all.json
 # 指定日期数据
 https://raw.githubusercontent.com/Zhu-junwei/bing-wallpaper-archive/master/2025/07/20.json
+
+# 全量数据 cdn加速
+https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/Bing_zh-CN_all.json
+# 指定日期数据 cdn加速
+https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/2025/07/20.json
 ```
 
 ## ⚠️ 注意事项

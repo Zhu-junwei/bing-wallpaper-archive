@@ -1,8 +1,10 @@
 @echo off & setlocal EnableDelayedExpansion
 color 0A & chcp 65001 >nul
 
-set "updated=20250628" 
-set "rversion=v1.2"
+set "updated=20250831" 
+::控制可下载最小范围 
+set "allow_download_min=20180911"
+set "rversion=v1.3"
 set "appName=必应壁纸下载器" 
 title %appName% %rversion%
 set "jsonFile=Bing_zh-CN_all.json"
@@ -12,8 +14,8 @@ echo ===================================================
 echo                      %appName%
 echo ===================================================
 call :get_date_range 
-echo  范围：
-echo       %min_date%-%max_date%
+echo  可下载范围： 
+echo       %min_date%- %max_date%
 echo.
 echo  分辨率： 
 echo      [1] 原图
@@ -24,9 +26,9 @@ echo      [5] 自定义分辨率
 echo.
 echo  注： 
 echo      1. 20190510之前的壁纸只能下载1080P。 
-echo      2. 最新json文件下载地址：https://github.com/Zhu-junwei/bing-wallpaper-archive
+echo      2. 图片数据源json下载地址：https://github.com/Zhu-junwei/bing-wallpaper-archive
 echo.
-set /p dpi=请输入你的选择，默认原始尺寸 [1-5]: 
+set /p dpi=请输入你的选择，默认下载原图 [1-5]: 
 ::if "%dpi%"=="1"  
 if "%dpi%"=="2"  set "w=3840" & set "h=2160"
 if "%dpi%"=="3"  set "w=2560" & set "h=1440"
@@ -49,7 +51,19 @@ call :download_start
 pause & exit
 
 :get_date_range
-if not exist %jsonFile% echo 缺少%jsonFile%文件，无法下载 & pause>nul & exit
+::if not exist %jsonFile% echo 缺少%jsonFile%文件，无法下载 & pause>nul & exit
+if not exist %jsonFile% (
+    echo 缺少图片数据源json%jsonFile%文件，尝试下载...
+    echo.
+	curl -L -4 -o %jsonFile% "https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/Bing_zh-CN_all.json"
+    if not exist %jsonFile% (
+        echo 下载失败，仍然无法找到 %jsonFile% 文件，无法继续操作。
+        pause >nul
+        exit
+    ) else cls & goto :main_menu
+)
+
+
 for /f "delims=" %%a in ('powershell -nologo -command ^
     "$json = Get-Content '%jsonFile%' -Encoding UTF8 -Raw | ConvertFrom-Json;" ^
     "$dates = $json.images | ForEach-Object { $_.enddate };" ^
@@ -58,6 +72,7 @@ for /f "delims=" %%a in ('powershell -nologo -command ^
 ') do (
     set "%%a"
 )
+if %min_date% lss %allow_download_min% ( set min_date=%allow_download_min% )
 exit /b
 
 :download_range

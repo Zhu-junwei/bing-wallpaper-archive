@@ -46,16 +46,21 @@
 
 ## 📥 数据获取
 
-GitHub：
+**GitHub：**
 
 ```
 # 全量数据
 https://raw.githubusercontent.com/Zhu-junwei/bing-wallpaper-archive/master/Bing_zh-CN_all.json
+
 # 指定日期数据
-https://raw.githubusercontent.com/Zhu-junwei/bing-wallpaper-archive/master/2025/07/20.json
+https://raw.githubusercontent.com/Zhu-junwei/bing-wallpaper-archive/master/2025/12/20.json
+# 指定月份数据
+https://raw.githubusercontent.com/Zhu-junwei/bing-wallpaper-archive/master/2025/12/all.json
+# 指定年份数据
+https://raw.githubusercontent.com/Zhu-junwei/bing-wallpaper-archive/master/2025/all.json
 ```
 
-jsdelivr：
+**jsdelivr：**
 
 ```
 # 全量数据 cdn加速
@@ -64,7 +69,11 @@ https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/Bing_zh-CN_all.jso
 https://purge.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/Bing_zh-CN_all.json
 
 # 指定日期数据 cdn加速
-https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/2025/07/20.json
+https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/2025/12/20.json
+# 指定月份数据 cdn加速
+https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/2025/12/all.json
+# 指定年份数据 cdn加速
+https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/2025/all.json
 ```
 
 ## ⚠️ 注意事项

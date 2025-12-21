@@ -38,12 +38,23 @@ jobs:
       - name: Purge jsDelivr cache
         if: env.has_changes == 'true'
         run: |
+          set -e
           owner="${{ github.repository_owner }}"
-          repo="${GITHUB_REPOSITORY#*/}"  # 提取仓库名部分
-          file_path="Bing_zh-CN_all.json"
-          purge_url="https://purge.jsdelivr.net/gh/${owner}/${repo}/${file_path}"
-          echo "Purging jsDelivr cache for ${owner}/${repo}/${file_path}..."
-          echo "Request: $purge_url"
-          response=$(curl -s -w "\nHTTP Status: %{http_code}\n" "$purge_url")
-          echo "Response:"
-          echo "$response"
+          repo="${GITHUB_REPOSITORY#*/}"
+          year=$(date +%Y)
+          month=$(date +%m)
+          files=(
+            "Bing_zh-CN_all.json"
+            "$year/all.json"
+            "$year/$month/all.json"
+          )
+          echo "🧹 Purging jsDelivr cache for:"
+          for f in "${files[@]}"; do
+            echo " - $f"
+          done
+          for file_path in "${files[@]}"; do
+            purge_url="https://purge.jsdelivr.net/gh/${owner}/${repo}/${file_path}"
+            echo "🔄 Purging: $purge_url"
+            curl -s -w "\nHTTP Status: %{http_code}\n" "$purge_url"
+            echo
+          done

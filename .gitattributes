@@ -1,0 +1,6 @@
+# 所有 .sh 文件强制使用 LF（Linux 脚本）
+*.sh text eol=lf
+
+# 所有 .bat 文件强制使用 CRLF（Windows 脚本）
+*.bat text eol=crlf
+*.ps1 text eol=crlf

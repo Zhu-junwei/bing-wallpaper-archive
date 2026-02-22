@@ -1,13 +1,14 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bing Wallpaper Archive | Neon Gallery</title>
-  <meta name="description" content="Bing 每日壁纸归档的科幻风在线展示与下载站。">
+  <title>Bing Wallpaper Archive</title>
+  <meta name="description" content="Bing 姣忔棩澹佺焊褰掓。鐨勭骞婚鍦ㄧ嚎灞曠ず涓庝笅杞界珯銆?>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Chakra+Petch:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
@@ -15,21 +16,24 @@
   <header class="topbar">
     <div class="brand">
       <span class="brand-kicker">BING WALLPAPER ARCHIVE</span>
-      <strong>Neon Gallery</strong>
     </div>
-    <a class="top-link" href="https://github.com/Zhu-junwei/bing-wallpaper-archive" target="_blank" rel="noopener">GitHub 仓库</a>
+    <a class="top-link" href="https://github.com/Zhu-junwei/bing-wallpaper-archive" target="_blank" rel="noopener" aria-label="GitHub">
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+      </svg>
+    </a>
   </header>
 
   <main class="layout">
     <section class="hero" id="hero">
       <div class="hero-copy">
         <p class="hero-date" id="heroDate">--</p>
-        <h1 id="heroTitle">加载中...</h1>
-        <p id="heroCopyright">正在读取最新壁纸数据。</p>
+        <h1 id="heroTitle">鍔犺浇涓?..</h1>
+        <p id="heroCopyright">姝ｅ湪璇诲彇鏈€鏂板绾告暟鎹€?/p>
         <div class="hero-actions">
-          <a id="heroUhd" href="#" target="_blank" rel="noopener">下载 UHD</a>
-          <a id="heroHd" href="#" target="_blank" rel="noopener">下载 1080P</a>
-          <a id="heroLink" href="#" target="_blank" rel="noopener">Bing 介绍</a>
+          <a id="heroUhd" href="#" target="_blank" rel="noopener">涓嬭浇 UHD</a>
+          <a id="heroHd" href="#" target="_blank" rel="noopener">涓嬭浇 1080P</a>
+          <a id="heroLink" href="#" target="_blank" rel="noopener">Bing 浠嬬粛</a>
         </div>
       </div>
       <div class="hero-visual">
@@ -40,27 +44,27 @@
     <section class="sticky-filters">
       <section class="panel controls">
       <label>
-        搜索
-        <input id="searchInput" type="search" placeholder="按标题、版权、日期搜索">
+        鎼滅储
+        <input id="searchInput" type="search" placeholder="鎸夋爣棰樸€佺増鏉冦€佹棩鏈熸悳绱?>
       </label>
       <label>
-        年份
+        骞翠唤
         <select id="yearFilter">
         </select>
       </label>
       <label>
-        排序
+        鎺掑簭
         <select id="sortOrder">
-          <option value="newest">最新优先</option>
-          <option value="oldest">最早优先</option>
+          <option value="newest">鏈€鏂颁紭鍏?/option>
+          <option value="oldest">鏈€鏃╀紭鍏?/option>
         </select>
       </label>
-      <button id="randomBtn" type="button">随机一张</button>
+      <button id="randomBtn" type="button">闅忔満涓€寮?/button>
       </section>
 
       <section class="panel stats">
-      <span id="totalCount">总数: --</span>
-      <span id="latestDate">最近更新: --</span>
+      <span id="totalCount">鎬绘暟: --</span>
+      <span id="latestDate">鏈€杩戞洿鏂? --</span>
       </section>
     </section>
 
@@ -72,7 +76,7 @@
       <section class="gallery-panel">
         <section class="gallery" id="gallery"></section>
         <section class="load-wrap">
-          <button id="loadMoreBtn" type="button">加载更多</button>
+          <button id="loadMoreBtn" type="button">鍔犺浇鏇村</button>
         </section>
       </section>
     </section>
@@ -102,8 +106,8 @@
       <button id="viewerHdBtn" class="viewer-res-btn active" type="button">1080P</button>
       <button id="viewerUhdBtn" class="viewer-res-btn" type="button">UHD</button>
     </div>
-    <button id="viewerPrevBtn" class="viewer-nav-btn prev" type="button" aria-label="上一张">‹</button>
-    <button id="viewerNextBtn" class="viewer-nav-btn next" type="button" aria-label="下一张">›</button>
+    <button id="viewerPrevBtn" class="viewer-nav-btn prev" type="button" aria-label="涓婁竴寮?>鈥?/button>
+    <button id="viewerNextBtn" class="viewer-nav-btn next" type="button" aria-label="涓嬩竴寮?>鈥?/button>
     <div id="viewerStage" class="viewer-stage">
       <img id="viewerLowImage" class="viewer-img viewer-low" alt="">
       <img id="viewerHighImage" class="viewer-img viewer-high" alt="">
@@ -115,8 +119,9 @@
       <p id="viewerMetaCopyright" class="viewer-meta-copyright"></p>
     </div>
   </div>
-  <button id="backToTopBtn" class="back-top" type="button" aria-label="回到顶部">↑</button>
+  <button id="backToTopBtn" class="back-top" type="button" aria-label="鍥炲埌椤堕儴">鈫?/button>
 
   <script src="assets/app.js" defer></script>
 </body>
 </html>
+

@@ -62,8 +62,7 @@ body {
 
 .brand {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
 }
 
 .brand-kicker {
@@ -74,25 +73,30 @@ body {
   color: #2c628f;
 }
 
-.brand strong {
-  font-family: "Orbitron", sans-serif;
-  font-size: 18px;
-  letter-spacing: 0.03em;
-}
-
 .top-link {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   color: var(--ink-0);
   border: 1px solid rgba(1, 53, 92, 0.25);
   border-radius: 999px;
-  padding: 7px 12px;
-  font-weight: 600;
-  transition: 0.2s ease;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(229, 244, 255, 0.95));
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.top-link svg {
+  width: 17px;
+  height: 17px;
+  fill: currentcolor;
 }
 
 .top-link:hover {
   border-color: rgba(1, 53, 92, 0.6);
   transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(5, 41, 72, 0.18);
 }
 
 .layout {

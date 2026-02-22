@@ -6,6 +6,7 @@ const PREVIEW_WIDTH = 960;
 const PREVIEW_HEIGHT = 540;
 const MONTH_JUMP_BATCH = 120;
 const ALL_YEARS_VALUE = "";
+const THUMB_PLACEHOLDER = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 
 const galleryEl = document.getElementById("gallery");
 const monthNavEl = document.getElementById("monthNav");
@@ -58,6 +59,7 @@ let viewerPromoteTimer = null;
 let viewerLoadToken = 0;
 let viewerResolutionLoading = false;
 const imageLoadState = new Map();
+let thumbObserver = null;
 let availableYears = [];
 let userSelectedYear = "";
 let searchingAllYears = false;
@@ -200,6 +202,61 @@ function runViewerSlide(direction) {
 
 function getViewerSrc(item) {
   return viewerResolution === "uhd" ? item.uhdUrl : item.hdUrl;
+}
+
+function hydrateCardImage(img) {
+  if (!img || !img.dataset || !img.dataset.src) {
+    return;
+  }
+  img.src = img.dataset.src;
+  img.removeAttribute("data-src");
+  if (thumbObserver) {
+    thumbObserver.unobserve(img);
+  }
+}
+
+function observeCardImage(img) {
+  if (!img || !img.dataset || !img.dataset.src) {
+    return;
+  }
+  if (!thumbObserver) {
+    hydrateCardImage(img);
+    return;
+  }
+  thumbObserver.observe(img);
+}
+
+function initThumbObserver() {
+  if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+    thumbObserver = null;
+    return;
+  }
+  thumbObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting || entry.intersectionRatio > 0) {
+        hydrateCardImage(entry.target);
+      }
+    }
+  }, {
+    root: null,
+    rootMargin: "320px 0px",
+    threshold: 0.01
+  });
+}
+
+function prioritizeMonthThumbs(monthKey, limit = 16) {
+  if (!monthKey) {
+    return;
+  }
+  const images = galleryEl.querySelectorAll(`.card[data-month="${monthKey}"] img[data-src]`);
+  let loaded = 0;
+  for (const img of images) {
+    hydrateCardImage(img);
+    loaded += 1;
+    if (loaded >= limit) {
+      break;
+    }
+  }
 }
 
 function hasAllYearsOption() {
@@ -474,7 +531,7 @@ function openViewerAtIndex(index, sourceImage) {
   viewerResolution = "hd";
   viewerIndex = index;
   const item = filteredItems[index];
-  const sourceSrc = sourceImage.currentSrc || sourceImage.src;
+  const sourceSrc = sourceImage.dataset.src || sourceImage.currentSrc || sourceImage.src;
   const startRect = sourceImage.getBoundingClientRect();
   viewerEl.hidden = false;
   viewerEl.classList.remove("open", "slide-next", "slide-prev", "quality-switch");
@@ -556,8 +613,10 @@ function cardFromItem(item, index) {
   card.dataset.index = String(index);
   card.dataset.month = item.month;
   card.style.setProperty("--index", String(index));
-  img.src = item.thumbUrl;
+  img.src = THUMB_PLACEHOLDER;
+  img.dataset.src = item.thumbUrl;
   img.alt = `${item.title} ${item.dateLabel}`;
+  observeCardImage(img);
   img.addEventListener("click", () => openViewerAtIndex(index, img));
   date.textContent = item.dateLabel;
   title.textContent = item.title;
@@ -590,6 +649,9 @@ function refreshLoadMoreVisibility() {
 
 function renderChunk(reset = false) {
   if (reset) {
+    if (thumbObserver) {
+      thumbObserver.disconnect();
+    }
     galleryEl.innerHTML = "";
     renderedCount = 0;
   }
@@ -607,11 +669,18 @@ function renderChunk(reset = false) {
   refreshLoadMoreVisibility();
 }
 
-function ensureRenderedTo(targetIndex) {
+function ensureRenderedTo(targetIndex, options = {}) {
+  const immediate = Boolean(options.immediate);
   if (targetIndex < renderedCount) {
     return Promise.resolve();
   }
   const targetEnd = Math.min(filteredItems.length, targetIndex + 1);
+  if (immediate) {
+    appendRange(renderedCount, targetEnd);
+    renderedCount = targetEnd;
+    refreshLoadMoreVisibility();
+    return Promise.resolve();
+  }
   return new Promise((resolve) => {
     const run = () => {
       const next = Math.min(targetEnd, renderedCount + MONTH_JUMP_BATCH);
@@ -641,10 +710,13 @@ async function jumpToMonth(monthKey) {
     return;
   }
   setActiveMonth(monthKey);
-  await ensureRenderedTo(targetIndex);
+  await ensureRenderedTo(targetIndex, { immediate: true });
   const card = galleryEl.querySelector(`.card[data-index="${targetIndex}"]`);
   if (card) {
     card.scrollIntoView({ behavior: "smooth", block: "start" });
+    requestAnimationFrame(() => {
+      prioritizeMonthThumbs(monthKey);
+    });
   }
 }
 
@@ -810,6 +882,7 @@ function bindEvents() {
 }
 
 async function start() {
+  initThumbObserver();
   bindEvents();
   try {
     const response = await fetch(DATA_FILE, { cache: "no-store" });

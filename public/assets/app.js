@@ -4,6 +4,7 @@ const PAGE_SIZE = 36;
 const MIN_DATE = "20200101";
 const PREVIEW_WIDTH = 1280;
 const PREVIEW_HEIGHT = 720;
+const MONTH_JUMP_BATCH = 120;
 
 const galleryEl = document.getElementById("gallery");
 const monthNavEl = document.getElementById("monthNav");
@@ -27,7 +28,10 @@ const latestDateEl = document.getElementById("latestDate");
 
 const viewerEl = document.getElementById("viewer");
 const viewerBackdropEl = document.getElementById("viewerBackdrop");
-const viewerImageEl = document.getElementById("viewerImage");
+const viewerStageEl = document.getElementById("viewerStage");
+const viewerLowImageEl = document.getElementById("viewerLowImage");
+const viewerHighImageEl = document.getElementById("viewerHighImage");
+const viewerUpgradeFxEl = document.getElementById("viewerUpgradeFx");
 const viewerHdBtn = document.getElementById("viewerHdBtn");
 const viewerUhdBtn = document.getElementById("viewerUhdBtn");
 const viewerPrevBtn = document.getElementById("viewerPrevBtn");
@@ -45,6 +49,7 @@ let viewerResolution = "hd";
 let viewerOriginImage = null;
 let viewerCloseTimer = null;
 let viewerAnimTimer = null;
+let viewerLoadToken = 0;
 
 function formatDate(enddate) {
   if (!/^\d{8}$/.test(enddate || "")) {
@@ -112,10 +117,18 @@ function clamp(val, min, max) {
   return Math.min(Math.max(val, min), max);
 }
 
+function getViewerRatio() {
+  if (viewerHighImageEl.naturalWidth && viewerHighImageEl.naturalHeight) {
+    return viewerHighImageEl.naturalWidth / viewerHighImageEl.naturalHeight;
+  }
+  if (viewerLowImageEl.naturalWidth && viewerLowImageEl.naturalHeight) {
+    return viewerLowImageEl.naturalWidth / viewerLowImageEl.naturalHeight;
+  }
+  return 16 / 9;
+}
+
 function getZoomTargetRect() {
-  const ratio = viewerImageEl.naturalWidth && viewerImageEl.naturalHeight
-    ? viewerImageEl.naturalWidth / viewerImageEl.naturalHeight
-    : 16 / 9;
+  const ratio = getViewerRatio();
   const maxWidth = window.innerWidth * 0.92;
   const maxHeight = window.innerHeight * 0.92;
   let width = maxWidth;
@@ -133,10 +146,10 @@ function getZoomTargetRect() {
 }
 
 function applyViewerRect(rect) {
-  viewerImageEl.style.top = `${rect.top}px`;
-  viewerImageEl.style.left = `${rect.left}px`;
-  viewerImageEl.style.width = `${rect.width}px`;
-  viewerImageEl.style.height = `${rect.height}px`;
+  viewerStageEl.style.top = `${rect.top}px`;
+  viewerStageEl.style.left = `${rect.left}px`;
+  viewerStageEl.style.width = `${rect.width}px`;
+  viewerStageEl.style.height = `${rect.height}px`;
 }
 
 function getItemImageElement(index) {
@@ -171,6 +184,32 @@ function getViewerSrc(item) {
   return viewerResolution === "uhd" ? item.uhdUrl : item.hdUrl;
 }
 
+function resetViewerHighLayer() {
+  viewerHighImageEl.classList.remove("reveal");
+  viewerHighImageEl.removeAttribute("src");
+  viewerUpgradeFxEl.classList.remove("active");
+}
+
+function loadViewerHighImage(item) {
+  const src = getViewerSrc(item);
+  const token = ++viewerLoadToken;
+  const loader = new Image();
+  loader.decoding = "async";
+  loader.onload = () => {
+    if (token !== viewerLoadToken || viewerEl.hidden || viewerIndex < 0) {
+      return;
+    }
+    viewerHighImageEl.src = src;
+    viewerHighImageEl.alt = `${item.title} ${item.dateLabel}`;
+    void viewerHighImageEl.offsetWidth;
+    viewerHighImageEl.classList.add("reveal");
+    viewerUpgradeFxEl.classList.remove("active");
+    void viewerUpgradeFxEl.offsetWidth;
+    viewerUpgradeFxEl.classList.add("active");
+  };
+  loader.src = src;
+}
+
 function showViewerItem(index, direction) {
   if (!filteredItems.length) {
     return;
@@ -178,8 +217,11 @@ function showViewerItem(index, direction) {
   viewerIndex = clamp(index, 0, filteredItems.length - 1);
   const item = filteredItems[viewerIndex];
   runViewerSlide(direction);
-  viewerImageEl.src = getViewerSrc(item);
-  viewerImageEl.alt = `${item.title} ${item.dateLabel}`;
+
+  viewerLowImageEl.src = item.thumbUrl;
+  viewerLowImageEl.alt = `${item.title} ${item.dateLabel}`;
+  resetViewerHighLayer();
+  loadViewerHighImage(item);
   updateViewerResButtons();
   updateViewerNavButtons();
 
@@ -193,6 +235,7 @@ function closeViewer() {
   if (viewerEl.hidden) {
     return;
   }
+  viewerLoadToken += 1;
   const origin = viewerOriginImage && document.body.contains(viewerOriginImage)
     ? viewerOriginImage.getBoundingClientRect()
     : null;
@@ -204,7 +247,8 @@ function closeViewer() {
   viewerCloseTimer = setTimeout(() => {
     viewerEl.hidden = true;
     document.body.style.overflow = "";
-    viewerImageEl.removeAttribute("src");
+    viewerLowImageEl.removeAttribute("src");
+    resetViewerHighLayer();
   }, 340);
 }
 
@@ -212,7 +256,6 @@ function openViewerAtIndex(index, sourceImage) {
   if (!filteredItems.length || index < 0 || index >= filteredItems.length || !sourceImage) {
     return;
   }
-
   clearTimeout(viewerCloseTimer);
   viewerOriginImage = sourceImage;
   viewerResolution = "hd";
@@ -302,7 +345,7 @@ function cardFromItem(item, index) {
 }
 
 function updateStats() {
-  totalCountEl.textContent = `总数: ${filteredItems.length}`;
+  totalCountEl.textContent = `总数: ${allItems.length}`;
   latestDateEl.textContent = `最近更新: ${allItems[0] ? allItems[0].dateLabel : "--"}`;
 }
 
@@ -342,12 +385,23 @@ function renderChunk(reset = false) {
 
 function ensureRenderedTo(targetIndex) {
   if (targetIndex < renderedCount) {
-    return;
+    return Promise.resolve();
   }
   const targetEnd = Math.min(filteredItems.length, targetIndex + 1);
-  appendRange(renderedCount, targetEnd);
-  renderedCount = targetEnd;
-  refreshLoadMoreVisibility();
+  return new Promise((resolve) => {
+    const run = () => {
+      const next = Math.min(targetEnd, renderedCount + MONTH_JUMP_BATCH);
+      appendRange(renderedCount, next);
+      renderedCount = next;
+      refreshLoadMoreVisibility();
+      if (renderedCount >= targetEnd) {
+        resolve();
+      } else {
+        requestAnimationFrame(run);
+      }
+    };
+    run();
+  });
 }
 
 function setActiveMonth(monthKey) {
@@ -357,18 +411,17 @@ function setActiveMonth(monthKey) {
   }
 }
 
-function jumpToMonth(monthKey) {
+async function jumpToMonth(monthKey) {
   const targetIndex = monthStartIndexMap.get(monthKey);
   if (targetIndex == null) {
     return;
   }
-  ensureRenderedTo(targetIndex);
-  const card = galleryEl.querySelector(`.card[data-index="${targetIndex}"]`);
-  if (!card) {
-    return;
-  }
   setActiveMonth(monthKey);
-  card.scrollIntoView({ behavior: "smooth", block: "start" });
+  await ensureRenderedTo(targetIndex);
+  const card = galleryEl.querySelector(`.card[data-index="${targetIndex}"]`);
+  if (card) {
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function renderMonthNav() {
@@ -379,17 +432,17 @@ function renderMonthNav() {
       monthStartIndexMap.set(item.month, index);
     }
   });
-
   for (const monthKey of monthStartIndexMap.keys()) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "month-btn";
     button.dataset.month = monthKey;
     button.textContent = `${monthKey.slice(0, 4)}-${monthKey.slice(4, 6)}`;
-    button.addEventListener("click", () => jumpToMonth(monthKey));
+    button.addEventListener("click", () => {
+      jumpToMonth(monthKey);
+    });
     monthNavEl.appendChild(button);
   }
-
   const firstMonth = monthStartIndexMap.keys().next().value;
   if (firstMonth) {
     setActiveMonth(firstMonth);
@@ -473,13 +526,13 @@ function bindEvents() {
   });
 
   viewerBackdropEl.addEventListener("click", closeViewer);
-  viewerImageEl.addEventListener("click", closeViewer);
+  viewerStageEl.addEventListener("click", closeViewer);
   viewerHdBtn.addEventListener("click", () => switchViewerResolution("hd"));
   viewerUhdBtn.addEventListener("click", () => switchViewerResolution("uhd"));
   viewerPrevBtn.addEventListener("click", goViewerPrev);
   viewerNextBtn.addEventListener("click", goViewerNext);
 
-  viewerImageEl.addEventListener("load", () => {
+  viewerLowImageEl.addEventListener("load", () => {
     if (!viewerEl.hidden) {
       applyViewerRect(getZoomTargetRect());
     }
@@ -517,6 +570,7 @@ async function start() {
     allItems = images
       .map(normalize)
       .filter((item) => item.thumbUrl && item.enddate >= MIN_DATE);
+    allItems.sort((a, b) => b.enddate.localeCompare(a.enddate));
     initYearFilter();
     applyFilters();
   } catch (error) {

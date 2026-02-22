@@ -102,7 +102,11 @@
     </div>
     <button id="viewerPrevBtn" class="viewer-nav-btn prev" type="button" aria-label="上一张">‹</button>
     <button id="viewerNextBtn" class="viewer-nav-btn next" type="button" aria-label="下一张">›</button>
-    <img id="viewerImage" class="viewer-image" alt="">
+    <div id="viewerStage" class="viewer-stage">
+      <img id="viewerLowImage" class="viewer-img viewer-low" alt="">
+      <img id="viewerHighImage" class="viewer-img viewer-high" alt="">
+      <div id="viewerUpgradeFx" class="viewer-upgrade-fx" aria-hidden="true"></div>
+    </div>
   </div>
 
   <script src="assets/app.js" defer></script>

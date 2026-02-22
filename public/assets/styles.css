@@ -398,10 +398,11 @@ body {
   opacity: 1;
 }
 
-.viewer-image {
+.viewer-stage {
   position: fixed;
   z-index: 1;
-  object-fit: contain;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 12px;
   box-shadow: 0 20px 55px rgba(0, 0, 0, 0.5);
   transition:
@@ -415,21 +416,63 @@ body {
   cursor: zoom-out;
 }
 
-.viewer.open .viewer-image {
+.viewer.open .viewer-stage {
   border-radius: 18px;
 }
 
-.viewer.slide-next .viewer-image,
-.viewer.slide-prev .viewer-image {
+.viewer.slide-next .viewer-stage,
+.viewer.slide-prev .viewer-stage {
   opacity: 0;
 }
 
-.viewer.slide-next .viewer-image {
+.viewer.slide-next .viewer-stage {
   transform: translateX(-30px);
 }
 
-.viewer.slide-prev .viewer-image {
+.viewer.slide-prev .viewer-stage {
   transform: translateX(30px);
+}
+
+.viewer-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.viewer-high {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+}
+
+.viewer-high.reveal {
+  opacity: 1;
+  animation: waterfall-reveal 0.42s ease forwards;
+}
+
+.viewer-upgrade-fx {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(145, 224, 255, 0.42), rgba(145, 224, 255, 0) 65%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(186, 236, 255, 0.22) 0,
+      rgba(186, 236, 255, 0.22) 2px,
+      transparent 2px,
+      transparent 10px
+    );
+  mix-blend-mode: screen;
+  transform: translateY(-100%);
+}
+
+.viewer-upgrade-fx.active {
+  animation: waterfall-fx 0.42s ease;
 }
 
 .viewer-toolbar {
@@ -569,5 +612,27 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes waterfall-reveal {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 1;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes waterfall-fx {
+  from {
+    transform: translateY(-100%);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
   }
 }

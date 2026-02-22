@@ -194,6 +194,33 @@ function getViewerSrc(item) {
   return viewerResolution === "uhd" ? item.uhdUrl : item.hdUrl;
 }
 
+function hasAllYearsOption() {
+  return Boolean(yearFilter.querySelector(`option[value="${ALL_YEARS_VALUE}"]`));
+}
+
+function renderYearFilterOptions(includeAll, selectedValue) {
+  yearFilter.innerHTML = "";
+  if (includeAll) {
+    const allOption = document.createElement("option");
+    allOption.value = ALL_YEARS_VALUE;
+    allOption.textContent = "全部年份";
+    yearFilter.appendChild(allOption);
+  }
+  for (const y of availableYears) {
+    const option = document.createElement("option");
+    option.value = y;
+    option.textContent = y;
+    yearFilter.appendChild(option);
+  }
+  if (selectedValue && [...yearFilter.options].some((option) => option.value === selectedValue)) {
+    yearFilter.value = selectedValue;
+  } else if (availableYears.length) {
+    yearFilter.value = availableYears[0];
+  } else {
+    yearFilter.value = ALL_YEARS_VALUE;
+  }
+}
+
 function markImageLoaded(src) {
   if (!src) {
     return;
@@ -379,18 +406,26 @@ function showViewerItem(index, direction, options = {}) {
   const token = ++viewerLoadToken;
   const item = filteredItems[viewerIndex];
   const preferredSrc = getViewerSrc(item);
-  runViewerSlide(direction);
 
   let hasPreferredReady = false;
+  const forceReveal = Boolean(options.forceReveal);
   if (options.keepCurrentBase && viewerLowImageEl.getAttribute("src")) {
     viewerLowImageEl.alt = `${item.title} ${item.dateLabel}`;
     if (isImageReady(preferredSrc)) {
-      setViewerLowImage(preferredSrc, item);
-      hasPreferredReady = true;
+      if (forceReveal) {
+        hasPreferredReady = false;
+      } else {
+        setViewerLowImage(preferredSrc, item);
+        hasPreferredReady = true;
+      }
     }
   } else {
     hasPreferredReady = ensureViewerBaseImage(item, preferredSrc, token);
   }
+
+  const shouldAnimateTransition = Boolean(direction) && (!hasPreferredReady || forceReveal);
+  runViewerSlide(shouldAnimateTransition ? direction : null);
+
   resetViewerHighLayer();
   if (!hasPreferredReady) {
     loadViewerHighImage(item, token);
@@ -464,7 +499,7 @@ function switchViewerResolution(next) {
   viewerQualityTimer = setTimeout(() => {
     viewerEl.classList.remove("quality-switch");
   }, 620);
-  showViewerItem(viewerIndex, null, { keepCurrentBase: true });
+  showViewerItem(viewerIndex, null, { keepCurrentBase: true, forceReveal: true });
 }
 
 function goViewerNext() {
@@ -641,6 +676,9 @@ function applyFilters() {
       userSelectedYear = yearFilter.value || userSelectedYear || availableYears[0] || ALL_YEARS_VALUE;
       searchingAllYears = true;
     }
+    if (!hasAllYearsOption()) {
+      renderYearFilterOptions(true, ALL_YEARS_VALUE);
+    }
     if (yearFilter.value !== ALL_YEARS_VALUE) {
       yearFilter.value = ALL_YEARS_VALUE;
     }
@@ -648,7 +686,7 @@ function applyFilters() {
     const restoreYear = userSelectedYear && availableYears.includes(userSelectedYear)
       ? userSelectedYear
       : (availableYears[0] || ALL_YEARS_VALUE);
-    yearFilter.value = restoreYear;
+    renderYearFilterOptions(false, restoreYear);
     searchingAllYears = false;
   } else if (yearFilter.value && yearFilter.value !== ALL_YEARS_VALUE) {
     userSelectedYear = yearFilter.value;
@@ -687,22 +725,10 @@ function initYearFilter() {
   const years = new Set(allItems.map((item) => item.year).filter(Boolean));
   const sorted = [...years].sort((a, b) => b.localeCompare(a));
   availableYears = sorted;
-  yearFilter.innerHTML = "";
-  const allOption = document.createElement("option");
-  allOption.value = ALL_YEARS_VALUE;
-  allOption.textContent = "全部年份";
-  yearFilter.appendChild(allOption);
-  for (const y of sorted) {
-    const option = document.createElement("option");
-    option.value = y;
-    option.textContent = y;
-    yearFilter.appendChild(option);
-  }
+  renderYearFilterOptions(false, sorted[0] || ALL_YEARS_VALUE);
   if (sorted.length) {
-    yearFilter.value = sorted[0];
     userSelectedYear = sorted[0];
   } else {
-    yearFilter.value = ALL_YEARS_VALUE;
     userSelectedYear = ALL_YEARS_VALUE;
   }
   searchingAllYears = false;

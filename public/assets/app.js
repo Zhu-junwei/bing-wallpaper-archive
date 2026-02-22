@@ -5,6 +5,7 @@ const MIN_DATE = "20200101";
 const PREVIEW_WIDTH = 1280;
 const PREVIEW_HEIGHT = 720;
 const MONTH_JUMP_BATCH = 120;
+const ALL_YEARS_VALUE = "";
 
 const galleryEl = document.getElementById("gallery");
 const monthNavEl = document.getElementById("monthNav");
@@ -55,6 +56,9 @@ let viewerAnimTimer = null;
 let viewerQualityTimer = null;
 let viewerLoadToken = 0;
 const imageLoadState = new Map();
+let availableYears = [];
+let userSelectedYear = "";
+let searchingAllYears = false;
 
 function formatDate(enddate) {
   if (!/^\d{8}$/.test(enddate || "")) {
@@ -605,13 +609,33 @@ function renderMonthNav() {
 function applyFilters() {
   const keyword = searchInput.value.trim().toLowerCase();
   const sort = sortOrder.value;
-  const year = yearFilter.value;
+  const hasKeyword = keyword.length > 0;
+
+  if (hasKeyword) {
+    if (!searchingAllYears) {
+      userSelectedYear = yearFilter.value || userSelectedYear || availableYears[0] || ALL_YEARS_VALUE;
+      searchingAllYears = true;
+    }
+    if (yearFilter.value !== ALL_YEARS_VALUE) {
+      yearFilter.value = ALL_YEARS_VALUE;
+    }
+  } else if (searchingAllYears) {
+    const restoreYear = userSelectedYear && availableYears.includes(userSelectedYear)
+      ? userSelectedYear
+      : (availableYears[0] || ALL_YEARS_VALUE);
+    yearFilter.value = restoreYear;
+    searchingAllYears = false;
+  } else if (yearFilter.value && yearFilter.value !== ALL_YEARS_VALUE) {
+    userSelectedYear = yearFilter.value;
+  }
+
+  const year = hasKeyword ? ALL_YEARS_VALUE : yearFilter.value;
 
   filteredItems = allItems.filter((item) => {
-    if (item.year !== year) {
+    if (year && item.year !== year) {
       return false;
     }
-    if (!keyword) {
+    if (!hasKeyword) {
       return true;
     }
     return (
@@ -637,7 +661,12 @@ function applyFilters() {
 function initYearFilter() {
   const years = new Set(allItems.map((item) => item.year).filter(Boolean));
   const sorted = [...years].sort((a, b) => b.localeCompare(a));
+  availableYears = sorted;
   yearFilter.innerHTML = "";
+  const allOption = document.createElement("option");
+  allOption.value = ALL_YEARS_VALUE;
+  allOption.textContent = "全部年份";
+  yearFilter.appendChild(allOption);
   for (const y of sorted) {
     const option = document.createElement("option");
     option.value = y;
@@ -646,7 +675,12 @@ function initYearFilter() {
   }
   if (sorted.length) {
     yearFilter.value = sorted[0];
+    userSelectedYear = sorted[0];
+  } else {
+    yearFilter.value = ALL_YEARS_VALUE;
+    userSelectedYear = ALL_YEARS_VALUE;
   }
+  searchingAllYears = false;
 }
 
 function bindEvents() {
@@ -654,7 +688,12 @@ function bindEvents() {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(applyFilters, 180);
   });
-  yearFilter.addEventListener("change", applyFilters);
+  yearFilter.addEventListener("change", () => {
+    if (yearFilter.value && yearFilter.value !== ALL_YEARS_VALUE) {
+      userSelectedYear = yearFilter.value;
+    }
+    applyFilters();
+  });
   sortOrder.addEventListener("change", applyFilters);
   loadMoreBtn.addEventListener("click", () => renderChunk(false));
 
@@ -687,15 +726,9 @@ function bindEvents() {
 
   viewerLowImageEl.addEventListener("load", () => {
     markImageLoaded(viewerLowImageEl.currentSrc || viewerLowImageEl.src);
-    if (!viewerEl.hidden) {
-      applyViewerRect(getZoomTargetRect());
-    }
   });
   viewerHighImageEl.addEventListener("load", () => {
     markImageLoaded(viewerHighImageEl.currentSrc || viewerHighImageEl.src);
-    if (!viewerEl.hidden) {
-      applyViewerRect(getZoomTargetRect());
-    }
   });
 
   window.addEventListener("keydown", (event) => {

@@ -486,6 +486,8 @@ body {
 }
 
 .viewer-res-btn {
+  position: relative;
+  overflow: hidden;
   border: 1px solid rgba(180, 232, 255, 0.42);
   color: #d8f2ff;
   background: rgba(13, 34, 53, 0.34);
@@ -502,6 +504,34 @@ body {
   border-color: rgba(255, 180, 117, 0.9);
   color: #ffd5b2;
   background: rgba(52, 24, 12, 0.42);
+}
+
+.viewer-res-btn.loading {
+  border-color: transparent;
+  color: #d8f2ff;
+  background: rgba(13, 34, 53, 0.34);
+}
+
+.viewer-res-btn.loading::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from 0deg,
+    rgba(142, 227, 255, 0.16),
+    rgba(142, 227, 255, 0.95),
+    rgba(255, 180, 117, 0.96),
+    rgba(142, 227, 255, 0.16)
+  );
+  animation: res-border-spin 1.05s linear infinite;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 
 .viewer-nav-btn {
@@ -713,5 +743,11 @@ body {
   }
   100% {
     box-shadow: 0 0 0 rgba(255, 187, 127, 0);
+  }
+}
+
+@keyframes res-border-spin {
+  to {
+    transform: rotate(1turn);
   }
 }

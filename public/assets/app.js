@@ -56,6 +56,7 @@ let viewerAnimTimer = null;
 let viewerQualityTimer = null;
 let viewerPromoteTimer = null;
 let viewerLoadToken = 0;
+let viewerResolutionLoading = false;
 const imageLoadState = new Map();
 let availableYears = [];
 let userSelectedYear = "";
@@ -169,6 +170,13 @@ function getItemImageElement(index) {
 function updateViewerResButtons() {
   viewerHdBtn.classList.toggle("active", viewerResolution === "hd");
   viewerUhdBtn.classList.toggle("active", viewerResolution === "uhd");
+  viewerHdBtn.classList.toggle("loading", viewerResolutionLoading && viewerResolution === "hd");
+  viewerUhdBtn.classList.toggle("loading", viewerResolutionLoading && viewerResolution === "uhd");
+}
+
+function setViewerResolutionLoading(isLoading) {
+  viewerResolutionLoading = Boolean(isLoading);
+  updateViewerResButtons();
 }
 
 function updateViewerNavButtons() {
@@ -321,13 +329,18 @@ function resetViewerHighLayer() {
   viewerUpgradeFxEl.classList.remove("active");
 }
 
-function loadViewerHighImage(item, token) {
+function loadViewerHighImage(item, token, options = {}) {
   const src = getViewerSrc(item);
+  const showResolutionLoading = Boolean(options.showResolutionLoading);
+  if (showResolutionLoading) {
+    setViewerResolutionLoading(true);
+  }
   preloadImage(src)
     .then(() => {
       if (token !== viewerLoadToken || viewerEl.hidden || viewerIndex < 0) {
         return;
       }
+      setViewerResolutionLoading(false);
       viewerHighImageEl.src = src;
       viewerHighImageEl.alt = `${item.title} ${item.dateLabel}`;
       void viewerHighImageEl.offsetWidth;
@@ -354,6 +367,7 @@ function loadViewerHighImage(item, token) {
       if (token !== viewerLoadToken || viewerEl.hidden || viewerIndex < 0) {
         return;
       }
+      setViewerResolutionLoading(false);
       if (!viewerLowImageEl.getAttribute("src") && item.thumbUrl) {
         setViewerLowImage(item.thumbUrl, item);
       }
@@ -406,12 +420,13 @@ function showViewerItem(index, direction, options = {}) {
   const token = ++viewerLoadToken;
   const item = filteredItems[viewerIndex];
   const preferredSrc = getViewerSrc(item);
+  const preferredReadyNow = isImageReady(preferredSrc);
 
   let hasPreferredReady = false;
   const forceReveal = Boolean(options.forceReveal);
   if (options.keepCurrentBase && viewerLowImageEl.getAttribute("src")) {
     viewerLowImageEl.alt = `${item.title} ${item.dateLabel}`;
-    if (isImageReady(preferredSrc)) {
+    if (preferredReadyNow) {
       if (forceReveal) {
         hasPreferredReady = false;
       } else {
@@ -428,7 +443,9 @@ function showViewerItem(index, direction, options = {}) {
 
   resetViewerHighLayer();
   if (!hasPreferredReady) {
-    loadViewerHighImage(item, token);
+    loadViewerHighImage(item, token, { showResolutionLoading: !preferredReadyNow });
+  } else {
+    setViewerResolutionLoading(false);
   }
   updateViewerMeta(item);
   updateViewerResButtons();
@@ -456,6 +473,7 @@ function closeViewer() {
   clearTimeout(viewerCloseTimer);
   clearTimeout(viewerQualityTimer);
   clearTimeout(viewerPromoteTimer);
+  setViewerResolutionLoading(false);
   viewerCloseTimer = setTimeout(() => {
     viewerEl.hidden = true;
     document.body.style.overflow = "";
@@ -472,12 +490,18 @@ function openViewerAtIndex(index, sourceImage) {
   viewerOriginImage = sourceImage;
   viewerResolution = "hd";
   viewerIndex = index;
+  const item = filteredItems[index];
+  const sourceSrc = sourceImage.currentSrc || sourceImage.src;
   const startRect = sourceImage.getBoundingClientRect();
   viewerEl.hidden = false;
   viewerEl.classList.remove("open", "slide-next", "slide-prev", "quality-switch");
   document.body.style.overflow = "hidden";
   applyViewerRect(startRect);
-  showViewerItem(viewerIndex, null);
+  if (item && sourceSrc) {
+    setViewerLowImage(sourceSrc, item);
+    markImageLoaded(sourceSrc);
+  }
+  showViewerItem(viewerIndex, null, { keepCurrentBase: true });
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       applyViewerRect(getZoomTargetRect());

@@ -54,6 +54,7 @@ let viewerOriginImage = null;
 let viewerCloseTimer = null;
 let viewerAnimTimer = null;
 let viewerQualityTimer = null;
+let viewerPromoteTimer = null;
 let viewerLoadToken = 0;
 const imageLoadState = new Map();
 let availableYears = [];
@@ -186,7 +187,7 @@ function runViewerSlide(direction) {
   viewerEl.classList.add(direction === "next" ? "slide-next" : "slide-prev");
   viewerAnimTimer = setTimeout(() => {
     viewerEl.classList.remove("slide-next", "slide-prev");
-  }, 220);
+  }, 160);
 }
 
 function getViewerSrc(item) {
@@ -307,6 +308,20 @@ function loadViewerHighImage(item, token) {
       viewerUpgradeFxEl.classList.remove("active");
       void viewerUpgradeFxEl.offsetWidth;
       viewerUpgradeFxEl.classList.add("active");
+
+      clearTimeout(viewerPromoteTimer);
+      viewerPromoteTimer = setTimeout(() => {
+        if (token !== viewerLoadToken || viewerEl.hidden || viewerIndex < 0) {
+          return;
+        }
+        const currentItem = filteredItems[viewerIndex];
+        if (!currentItem || currentItem.enddate !== item.enddate) {
+          return;
+        }
+        // After the paint-like reveal, replace the base layer with final quality.
+        setViewerLowImage(src, item);
+        resetViewerHighLayer();
+      }, 620);
     })
     .catch(() => {
       if (token !== viewerLoadToken || viewerEl.hidden || viewerIndex < 0) {
@@ -324,7 +339,7 @@ function ensureViewerBaseImage(item, preferredSrc, token) {
     return true;
   }
 
-  const fallback = item.thumbUrl || preferredSrc;
+  const fallback = item.hdUrl || item.thumbUrl || preferredSrc;
   if (!fallback) {
     return false;
   }
@@ -356,7 +371,7 @@ function ensureViewerBaseImage(item, preferredSrc, token) {
   return false;
 }
 
-function showViewerItem(index, direction) {
+function showViewerItem(index, direction, options = {}) {
   if (!filteredItems.length) {
     return;
   }
@@ -366,7 +381,16 @@ function showViewerItem(index, direction) {
   const preferredSrc = getViewerSrc(item);
   runViewerSlide(direction);
 
-  const hasPreferredReady = ensureViewerBaseImage(item, preferredSrc, token);
+  let hasPreferredReady = false;
+  if (options.keepCurrentBase && viewerLowImageEl.getAttribute("src")) {
+    viewerLowImageEl.alt = `${item.title} ${item.dateLabel}`;
+    if (isImageReady(preferredSrc)) {
+      setViewerLowImage(preferredSrc, item);
+      hasPreferredReady = true;
+    }
+  } else {
+    hasPreferredReady = ensureViewerBaseImage(item, preferredSrc, token);
+  }
   resetViewerHighLayer();
   if (!hasPreferredReady) {
     loadViewerHighImage(item, token);
@@ -396,6 +420,7 @@ function closeViewer() {
   }
   clearTimeout(viewerCloseTimer);
   clearTimeout(viewerQualityTimer);
+  clearTimeout(viewerPromoteTimer);
   viewerCloseTimer = setTimeout(() => {
     viewerEl.hidden = true;
     document.body.style.overflow = "";
@@ -439,7 +464,7 @@ function switchViewerResolution(next) {
   viewerQualityTimer = setTimeout(() => {
     viewerEl.classList.remove("quality-switch");
   }, 620);
-  showViewerItem(viewerIndex, null);
+  showViewerItem(viewerIndex, null, { keepCurrentBase: true });
 }
 
 function goViewerNext() {

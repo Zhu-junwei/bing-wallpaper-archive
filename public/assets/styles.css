@@ -423,11 +423,11 @@ body {
 }
 
 .viewer.slide-next .viewer-stage {
-  animation: viewer-swipe-next 0.26s cubic-bezier(0.25, 0.65, 0.25, 1);
+  animation: viewer-fade-in 0.16s ease-out;
 }
 
 .viewer.slide-prev .viewer-stage {
-  animation: viewer-swipe-prev 0.26s cubic-bezier(0.25, 0.65, 0.25, 1);
+  animation: viewer-fade-in 0.16s ease-out;
 }
 
 .viewer-img {
@@ -691,6 +691,15 @@ body {
   }
   100% {
     transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes viewer-fade-in {
+  from {
+    opacity: 0.96;
+  }
+  to {
     opacity: 1;
   }
 }

@@ -380,35 +380,13 @@ function ensureViewerBaseImage(item, preferredSrc, token) {
     return true;
   }
 
-  const fallback = item.hdUrl || item.thumbUrl || preferredSrc;
+  const fallback = item.thumbUrl || item.hdUrl || preferredSrc;
   if (!fallback) {
     return false;
   }
 
-  const hasVisibleImage = viewerLowImageEl.hasAttribute("src");
-  if (!hasVisibleImage || isImageReady(fallback)) {
-    setViewerLowImage(fallback, item);
-  } else {
-    preloadImage(fallback)
-      .then(() => {
-        if (token !== viewerLoadToken || viewerEl.hidden || viewerIndex < 0) {
-          return;
-        }
-        const currentItem = filteredItems[viewerIndex];
-        if (!currentItem || currentItem.enddate !== item.enddate) {
-          return;
-        }
-        setViewerLowImage(fallback, item);
-      })
-      .catch(() => {
-        if (token !== viewerLoadToken || viewerEl.hidden || viewerIndex < 0) {
-          return;
-        }
-        if (!viewerLowImageEl.getAttribute("src") && preferredSrc) {
-          setViewerLowImage(preferredSrc, item);
-        }
-      });
-  }
+  // Always switch to the next item's preview first, then upgrade to target resolution.
+  setViewerLowImage(fallback, item);
   return false;
 }
 

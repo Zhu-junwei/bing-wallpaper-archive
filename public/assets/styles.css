@@ -437,10 +437,14 @@ body {
   height: 100%;
   object-fit: contain;
   user-select: none;
-  pointer-events: none;
+}
+
+.viewer-low {
+  pointer-events: auto;
 }
 
 .viewer-high {
+  pointer-events: none;
   opacity: 0;
   clip-path: inset(0 0 100% 0);
 }

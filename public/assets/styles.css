@@ -234,14 +234,6 @@ body {
   overflow: auto;
 }
 
-.month-panel h2 {
-  margin: 2px 6px 10px;
-  font-family: "Orbitron", sans-serif;
-  font-size: 14px;
-  letter-spacing: 0.06em;
-  color: #1f547e;
-}
-
 .month-nav {
   display: grid;
   gap: 6px;
@@ -409,15 +401,100 @@ body {
 .viewer-image {
   position: fixed;
   z-index: 1;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 12px;
   box-shadow: 0 20px 55px rgba(0, 0, 0, 0.5);
-  transition: top 0.32s ease, left 0.32s ease, width 0.32s ease, height 0.32s ease, border-radius 0.32s ease;
+  transition:
+    top 0.32s ease,
+    left 0.32s ease,
+    width 0.32s ease,
+    height 0.32s ease,
+    border-radius 0.32s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
   cursor: zoom-out;
 }
 
 .viewer.open .viewer-image {
   border-radius: 18px;
+}
+
+.viewer.slide-next .viewer-image,
+.viewer.slide-prev .viewer-image {
+  opacity: 0;
+}
+
+.viewer.slide-next .viewer-image {
+  transform: translateX(-30px);
+}
+
+.viewer.slide-prev .viewer-image {
+  transform: translateX(30px);
+}
+
+.viewer-toolbar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+}
+
+.viewer-res-btn {
+  border: 1px solid rgba(180, 232, 255, 0.42);
+  color: #d8f2ff;
+  background: rgba(13, 34, 53, 0.34);
+  backdrop-filter: blur(5px);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-family: "Orbitron", sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewer-res-btn.active {
+  border-color: rgba(255, 180, 117, 0.9);
+  color: #ffd5b2;
+  background: rgba(52, 24, 12, 0.42);
+}
+
+.viewer-nav-btn {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 42px;
+  height: 62px;
+  border-radius: 12px;
+  border: 1px solid rgba(166, 227, 255, 0.42);
+  background: rgba(7, 24, 40, 0.33);
+  color: #d7f2ff;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+
+.viewer-nav-btn:hover {
+  border-color: rgba(255, 171, 97, 0.88);
+  color: #ffd2a8;
+  background: rgba(48, 24, 13, 0.42);
+}
+
+.viewer-nav-btn.prev {
+  left: 16px;
+}
+
+.viewer-nav-btn.next {
+  right: 16px;
+}
+
+.viewer-nav-btn:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
 }
 
 @media (max-width: 1080px) {

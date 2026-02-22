@@ -23,21 +23,28 @@ const heroHd = document.getElementById("heroHd");
 const heroLink = document.getElementById("heroLink");
 
 const totalCountEl = document.getElementById("totalCount");
-const filteredCountEl = document.getElementById("filteredCount");
 const latestDateEl = document.getElementById("latestDate");
 
 const viewerEl = document.getElementById("viewer");
 const viewerBackdropEl = document.getElementById("viewerBackdrop");
 const viewerImageEl = document.getElementById("viewerImage");
+const viewerHdBtn = document.getElementById("viewerHdBtn");
+const viewerUhdBtn = document.getElementById("viewerUhdBtn");
+const viewerPrevBtn = document.getElementById("viewerPrevBtn");
+const viewerNextBtn = document.getElementById("viewerNextBtn");
 
 let allItems = [];
 let filteredItems = [];
 let renderedCount = 0;
-let searchTimer = null;
 let monthStartIndexMap = new Map();
+let searchTimer = null;
 let heroItem = null;
+
+let viewerIndex = -1;
+let viewerResolution = "hd";
 let viewerOriginImage = null;
 let viewerCloseTimer = null;
+let viewerAnimTimer = null;
 
 function formatDate(enddate) {
   if (!/^\d{8}$/.test(enddate || "")) {
@@ -101,6 +108,10 @@ function normalize(item) {
   };
 }
 
+function clamp(val, min, max) {
+  return Math.min(Math.max(val, min), max);
+}
+
 function getZoomTargetRect() {
   const ratio = viewerImageEl.naturalWidth && viewerImageEl.naturalHeight
     ? viewerImageEl.naturalWidth / viewerImageEl.naturalHeight
@@ -128,6 +139,56 @@ function applyViewerRect(rect) {
   viewerImageEl.style.height = `${rect.height}px`;
 }
 
+function getItemImageElement(index) {
+  return galleryEl.querySelector(`.card[data-index="${index}"] img`);
+}
+
+function updateViewerResButtons() {
+  viewerHdBtn.classList.toggle("active", viewerResolution === "hd");
+  viewerUhdBtn.classList.toggle("active", viewerResolution === "uhd");
+}
+
+function updateViewerNavButtons() {
+  const canPrev = viewerIndex > 0;
+  const canNext = viewerIndex >= 0 && viewerIndex < filteredItems.length - 1;
+  viewerPrevBtn.disabled = !canPrev;
+  viewerNextBtn.disabled = !canNext;
+}
+
+function runViewerSlide(direction) {
+  clearTimeout(viewerAnimTimer);
+  viewerEl.classList.remove("slide-next", "slide-prev");
+  if (!direction) {
+    return;
+  }
+  viewerEl.classList.add(direction === "next" ? "slide-next" : "slide-prev");
+  viewerAnimTimer = setTimeout(() => {
+    viewerEl.classList.remove("slide-next", "slide-prev");
+  }, 220);
+}
+
+function getViewerSrc(item) {
+  return viewerResolution === "uhd" ? item.uhdUrl : item.hdUrl;
+}
+
+function showViewerItem(index, direction) {
+  if (!filteredItems.length) {
+    return;
+  }
+  viewerIndex = clamp(index, 0, filteredItems.length - 1);
+  const item = filteredItems[viewerIndex];
+  runViewerSlide(direction);
+  viewerImageEl.src = getViewerSrc(item);
+  viewerImageEl.alt = `${item.title} ${item.dateLabel}`;
+  updateViewerResButtons();
+  updateViewerNavButtons();
+
+  const currentCardImage = getItemImageElement(viewerIndex);
+  if (currentCardImage) {
+    viewerOriginImage = currentCardImage;
+  }
+}
+
 function closeViewer() {
   if (viewerEl.hidden) {
     return;
@@ -135,7 +196,7 @@ function closeViewer() {
   const origin = viewerOriginImage && document.body.contains(viewerOriginImage)
     ? viewerOriginImage.getBoundingClientRect()
     : null;
-  viewerEl.classList.remove("open");
+  viewerEl.classList.remove("open", "slide-next", "slide-prev");
   if (origin) {
     applyViewerRect(origin);
   }
@@ -147,25 +208,52 @@ function closeViewer() {
   }, 340);
 }
 
-function openViewer(item, sourceImage) {
-  if (!item || !sourceImage) {
+function openViewerAtIndex(index, sourceImage) {
+  if (!filteredItems.length || index < 0 || index >= filteredItems.length || !sourceImage) {
     return;
   }
+
   clearTimeout(viewerCloseTimer);
   viewerOriginImage = sourceImage;
+  viewerResolution = "hd";
+  viewerIndex = index;
   const startRect = sourceImage.getBoundingClientRect();
-  viewerImageEl.src = item.hdUrl;
-  viewerImageEl.alt = `${item.title} ${item.dateLabel}`;
   viewerEl.hidden = false;
-  viewerEl.classList.remove("open");
+  viewerEl.classList.remove("open", "slide-next", "slide-prev");
   document.body.style.overflow = "hidden";
   applyViewerRect(startRect);
+  showViewerItem(viewerIndex, null);
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       applyViewerRect(getZoomTargetRect());
       viewerEl.classList.add("open");
     });
   });
+}
+
+function switchViewerResolution(next) {
+  if (viewerEl.hidden || (next !== "hd" && next !== "uhd")) {
+    return;
+  }
+  if (viewerResolution === next) {
+    return;
+  }
+  viewerResolution = next;
+  showViewerItem(viewerIndex, null);
+}
+
+function goViewerNext() {
+  if (viewerIndex >= filteredItems.length - 1) {
+    return;
+  }
+  showViewerItem(viewerIndex + 1, "next");
+}
+
+function goViewerPrev() {
+  if (viewerIndex <= 0) {
+    return;
+  }
+  showViewerItem(viewerIndex - 1, "prev");
 }
 
 function renderHero(item) {
@@ -177,7 +265,6 @@ function renderHero(item) {
     heroImage.removeAttribute("src");
     return;
   }
-
   heroDate.textContent = item.dateLabel;
   heroTitle.textContent = item.title;
   heroCopyright.textContent = item.copyright;
@@ -188,7 +275,7 @@ function renderHero(item) {
   heroLink.href = item.copyrightlink || "https://www.bing.com";
 }
 
-function cardFromItem(item, idx) {
+function cardFromItem(item, index) {
   const fragment = templateEl.content.cloneNode(true);
   const card = fragment.querySelector(".card");
   const img = fragment.querySelector("img");
@@ -199,26 +286,39 @@ function cardFromItem(item, idx) {
   const hd = fragment.querySelector(".card-hd");
   const link = fragment.querySelector(".card-link");
 
-  card.dataset.index = String(idx);
+  card.dataset.index = String(index);
   card.dataset.month = item.month;
-  card.style.setProperty("--index", String(idx));
+  card.style.setProperty("--index", String(index));
   img.src = item.thumbUrl;
   img.alt = `${item.title} ${item.dateLabel}`;
-  img.addEventListener("click", () => openViewer(item, img));
+  img.addEventListener("click", () => openViewerAtIndex(index, img));
   date.textContent = item.dateLabel;
   title.textContent = item.title;
   copyright.textContent = item.copyright;
   uhd.href = item.uhdUrl || "#";
   hd.href = item.hdUrl || "#";
   link.href = item.copyrightlink || "https://www.bing.com";
-
   return fragment;
 }
 
 function updateStats() {
-  totalCountEl.textContent = `总数(2020+): ${allItems.length}`;
-  filteredCountEl.textContent = `当前筛选: ${filteredItems.length}`;
+  totalCountEl.textContent = `总数: ${filteredItems.length}`;
   latestDateEl.textContent = `最近更新: ${allItems[0] ? allItems[0].dateLabel : "--"}`;
+}
+
+function appendRange(start, end) {
+  if (start >= end) {
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  for (let i = start; i < end; i += 1) {
+    fragment.appendChild(cardFromItem(filteredItems[i], i));
+  }
+  galleryEl.appendChild(fragment);
+}
+
+function refreshLoadMoreVisibility() {
+  loadMoreBtn.hidden = renderedCount >= filteredItems.length;
 }
 
 function renderChunk(reset = false) {
@@ -226,9 +326,7 @@ function renderChunk(reset = false) {
     galleryEl.innerHTML = "";
     renderedCount = 0;
   }
-
-  const nextItems = filteredItems.slice(renderedCount, renderedCount + PAGE_SIZE);
-  if (reset && nextItems.length === 0) {
+  if (!filteredItems.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
     empty.textContent = "没有匹配的壁纸。";
@@ -236,19 +334,20 @@ function renderChunk(reset = false) {
     loadMoreBtn.hidden = true;
     return;
   }
-
-  const start = renderedCount;
-  for (let i = 0; i < nextItems.length; i += 1) {
-    galleryEl.appendChild(cardFromItem(nextItems[i], start + i));
-  }
-  renderedCount += nextItems.length;
-  loadMoreBtn.hidden = renderedCount >= filteredItems.length;
+  const nextEnd = Math.min(filteredItems.length, renderedCount + PAGE_SIZE);
+  appendRange(renderedCount, nextEnd);
+  renderedCount = nextEnd;
+  refreshLoadMoreVisibility();
 }
 
 function ensureRenderedTo(targetIndex) {
-  while (renderedCount <= targetIndex && renderedCount < filteredItems.length) {
-    renderChunk(false);
+  if (targetIndex < renderedCount) {
+    return;
   }
+  const targetEnd = Math.min(filteredItems.length, targetIndex + 1);
+  appendRange(renderedCount, targetEnd);
+  renderedCount = targetEnd;
+  refreshLoadMoreVisibility();
 }
 
 function setActiveMonth(monthKey) {
@@ -280,6 +379,7 @@ function renderMonthNav() {
       monthStartIndexMap.set(item.month, index);
     }
   });
+
   for (const monthKey of monthStartIndexMap.keys()) {
     const button = document.createElement("button");
     button.type = "button";
@@ -289,6 +389,7 @@ function renderMonthNav() {
     button.addEventListener("click", () => jumpToMonth(monthKey));
     monthNavEl.appendChild(button);
   }
+
   const firstMonth = monthStartIndexMap.keys().next().value;
   if (firstMonth) {
     setActiveMonth(firstMonth);
@@ -297,11 +398,11 @@ function renderMonthNav() {
 
 function applyFilters() {
   const keyword = searchInput.value.trim().toLowerCase();
-  const year = yearFilter.value;
   const sort = sortOrder.value;
+  const year = yearFilter.value;
 
   filteredItems = allItems.filter((item) => {
-    if (year !== "all" && item.year !== year) {
+    if (item.year !== year) {
       return false;
     }
     if (!keyword) {
@@ -322,7 +423,7 @@ function applyFilters() {
   });
 
   renderMonthNav();
-  renderHero(filteredItems[0]);
+  renderHero(filteredItems[0] || null);
   renderChunk(true);
   updateStats();
 }
@@ -330,11 +431,15 @@ function applyFilters() {
 function initYearFilter() {
   const years = new Set(allItems.map((item) => item.year).filter(Boolean));
   const sorted = [...years].sort((a, b) => b.localeCompare(a));
+  yearFilter.innerHTML = "";
   for (const y of sorted) {
     const option = document.createElement("option");
     option.value = y;
     option.textContent = y;
     yearFilter.appendChild(option);
+  }
+  if (sorted.length) {
+    yearFilter.value = sorted[0];
   }
 }
 
@@ -358,23 +463,41 @@ function bindEvents() {
   });
 
   heroImage.addEventListener("click", () => {
-    if (heroItem) {
-      openViewer(heroItem, heroImage);
+    if (!heroItem) {
+      return;
+    }
+    const index = filteredItems.findIndex((item) => item.enddate === heroItem.enddate);
+    if (index >= 0) {
+      openViewerAtIndex(index, heroImage);
     }
   });
 
   viewerBackdropEl.addEventListener("click", closeViewer);
   viewerImageEl.addEventListener("click", closeViewer);
+  viewerHdBtn.addEventListener("click", () => switchViewerResolution("hd"));
+  viewerUhdBtn.addEventListener("click", () => switchViewerResolution("uhd"));
+  viewerPrevBtn.addEventListener("click", goViewerPrev);
+  viewerNextBtn.addEventListener("click", goViewerNext);
+
   viewerImageEl.addEventListener("load", () => {
     if (!viewerEl.hidden) {
       applyViewerRect(getZoomTargetRect());
     }
   });
+
   window.addEventListener("keydown", (event) => {
+    if (viewerEl.hidden) {
+      return;
+    }
     if (event.key === "Escape") {
       closeViewer();
+    } else if (event.key === "ArrowLeft") {
+      goViewerPrev();
+    } else if (event.key === "ArrowRight") {
+      goViewerNext();
     }
   });
+
   window.addEventListener("resize", () => {
     if (!viewerEl.hidden) {
       applyViewerRect(getZoomTargetRect());

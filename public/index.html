@@ -45,7 +45,6 @@
       <label>
         年份
         <select id="yearFilter">
-          <option value="all">全部年份</option>
         </select>
       </label>
       <label>
@@ -60,13 +59,11 @@
 
     <section class="panel stats">
       <span id="totalCount">总数: --</span>
-      <span id="filteredCount">当前筛选: --</span>
       <span id="latestDate">最近更新: --</span>
     </section>
 
     <section class="content-grid">
       <aside class="panel month-panel">
-        <h2>月份定位</h2>
         <div id="monthNav" class="month-nav"></div>
       </aside>
 
@@ -99,6 +96,12 @@
 
   <div id="viewer" class="viewer" hidden>
     <div id="viewerBackdrop" class="viewer-backdrop"></div>
+    <div class="viewer-toolbar">
+      <button id="viewerHdBtn" class="viewer-res-btn active" type="button">1080P</button>
+      <button id="viewerUhdBtn" class="viewer-res-btn" type="button">UHD</button>
+    </div>
+    <button id="viewerPrevBtn" class="viewer-nav-btn prev" type="button" aria-label="上一张">‹</button>
+    <button id="viewerNextBtn" class="viewer-nav-btn next" type="button" aria-label="下一张">›</button>
     <img id="viewerImage" class="viewer-image" alt="">
   </div>
 

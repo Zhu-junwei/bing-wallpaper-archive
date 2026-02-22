@@ -165,6 +165,12 @@ body {
   border-color: rgba(1, 63, 103, 0.52);
 }
 
+.hero-actions a.disabled,
+.btn-ghost.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .hero-visual {
   border-radius: 14px;
   overflow: hidden;

@@ -1,7 +1,7 @@
 ﻿const DATA_FILE = "./Bing_zh-CN_all.json";
 const BING_HOST = "https://www.bing.com";
 const PAGE_SIZE = 36;
-const MIN_DATE = "20190510";
+const UHD_CUTOFF_DATE = "20190510";
 const PREVIEW_WIDTH = 640;
 const PREVIEW_HEIGHT = 360;
 const MONTH_JUMP_BATCH = 120;
@@ -109,10 +109,11 @@ function buildPreviewPath(path) {
 function normalize(item) {
   const enddate = safeText(item.enddate, "");
   const hdPath = safeText(item.url, "");
-  const previewPath = buildPreviewPath(hdPath);
   const hdUrl = toAbsolute(hdPath);
-  const previewUrl = toAbsolute(previewPath);
-  const uhdUrl = item.urlbase ? toAbsolute(`${item.urlbase}_UHD.jpg`) : hdUrl;
+  const hasUhd = enddate >= UHD_CUTOFF_DATE && Boolean(item.urlbase);
+  const uhdUrl = hasUhd
+    ? toAbsolute(`${item.urlbase}_UHD.jpg&rf=LaDigue_UHD.jpg&pid=hp&w=1920&h=1080&rs=1&c=4`)
+    : "";
   return {
     enddate,
     year: enddate.slice(0, 4),
@@ -123,7 +124,8 @@ function normalize(item) {
     copyrightlink: safeText(item.copyrightlink, ""),
     hdUrl,
     uhdUrl,
-    thumbUrl: previewUrl || hdUrl
+    hasUhd,
+    thumbUrl: hdUrl
   };
 }
 
@@ -171,10 +173,14 @@ function getItemImageElement(index) {
 }
 
 function updateViewerResButtons() {
+  const currentItem = viewerIndex >= 0 ? filteredItems[viewerIndex] : null;
+  const canUhd = Boolean(currentItem && currentItem.hasUhd);
   viewerHdBtn.classList.toggle("active", viewerResolution === "hd");
   viewerUhdBtn.classList.toggle("active", viewerResolution === "uhd");
   viewerHdBtn.classList.toggle("loading", viewerResolutionLoading && viewerResolution === "hd");
   viewerUhdBtn.classList.toggle("loading", viewerResolutionLoading && viewerResolution === "uhd");
+  viewerUhdBtn.disabled = !canUhd;
+  viewerUhdBtn.title = canUhd ? "UHD" : "该图片仅支持1080P";
 }
 
 function setViewerResolutionLoading(isLoading) {
@@ -455,39 +461,26 @@ function showViewerItem(index, direction, options = {}) {
   viewerIndex = clamp(index, 0, filteredItems.length - 1);
   const token = ++viewerLoadToken;
   const item = filteredItems[viewerIndex];
+  if (!item.hasUhd && viewerResolution === "uhd") {
+    viewerResolution = "hd";
+  }
   const preferredSrc = getViewerSrc(item);
-  const preferredReadyNow = isImageReady(preferredSrc);
   const forcePreviewFirst = Boolean(options.forcePreviewFirst);
 
-  let hasPreferredReady = false;
-  const forceReveal = Boolean(options.forceReveal);
+  let baseSrc = preferredSrc || item.thumbUrl || item.hdUrl;
   if (forcePreviewFirst && item.thumbUrl) {
     // For next/prev navigation, show preview first to keep transitions responsive.
-    setViewerLowImage(item.thumbUrl, item);
-    hasPreferredReady = false;
-  } else if (options.keepCurrentBase && viewerLowImageEl.getAttribute("src")) {
-    viewerLowImageEl.alt = `${item.title} ${item.dateLabel}`;
-    if (preferredReadyNow) {
-      if (forceReveal) {
-        hasPreferredReady = false;
-      } else {
-        setViewerLowImage(preferredSrc, item);
-        hasPreferredReady = true;
-      }
-    }
-  } else {
-    hasPreferredReady = ensureViewerBaseImage(item, preferredSrc, token);
+    baseSrc = item.thumbUrl;
+  }
+  if (baseSrc) {
+    setViewerLowImage(baseSrc, item);
   }
 
-  const shouldAnimateTransition = Boolean(direction) && (!hasPreferredReady || forceReveal);
+  const shouldAnimateTransition = Boolean(direction);
   runViewerSlide(shouldAnimateTransition ? direction : null);
 
   resetViewerHighLayer();
-  if (!hasPreferredReady) {
-    loadViewerHighImage(item, token, { showResolutionLoading: !preferredReadyNow });
-  } else {
-    setViewerResolutionLoading(false);
-  }
+  setViewerResolutionLoading(false);
   updateViewerMeta(item);
   updateViewerResButtons();
   updateViewerNavButtons();
@@ -555,16 +548,22 @@ function switchViewerResolution(next) {
   if (viewerEl.hidden || (next !== "hd" && next !== "uhd")) {
     return;
   }
+  const currentItem = viewerIndex >= 0 ? filteredItems[viewerIndex] : null;
+  if (next === "uhd" && (!currentItem || !currentItem.hasUhd)) {
+    return;
+  }
   if (viewerResolution === next) {
     return;
   }
   viewerResolution = next;
+  const targetSrc = currentItem ? getViewerSrc(currentItem) : "";
+  setViewerResolutionLoading(Boolean(targetSrc && !isImageReady(targetSrc)));
   viewerEl.classList.add("quality-switch");
   clearTimeout(viewerQualityTimer);
   viewerQualityTimer = setTimeout(() => {
     viewerEl.classList.remove("quality-switch");
   }, 620);
-  showViewerItem(viewerIndex, null, { keepCurrentBase: true, forceReveal: true });
+  showViewerItem(viewerIndex, null, { keepCurrentBase: true });
 }
 
 function goViewerNext() {
@@ -596,6 +595,7 @@ function renderHero(item) {
   heroImage.src = item.thumbUrl;
   heroImage.alt = `${item.title} ${item.dateLabel}`;
   heroUhd.href = item.uhdUrl || "#";
+  heroUhd.classList.toggle("disabled", !item.hasUhd);
   heroHd.href = item.hdUrl || "#";
   heroLink.href = item.copyrightlink || "https://www.bing.com";
 }
@@ -623,6 +623,7 @@ function cardFromItem(item, index) {
   title.textContent = item.title;
   copyright.textContent = item.copyright;
   uhd.href = item.uhdUrl || "#";
+  uhd.classList.toggle("disabled", !item.hasUhd);
   hd.href = item.hdUrl || "#";
   link.href = item.copyrightlink || "https://www.bing.com";
   return fragment;
@@ -910,7 +911,7 @@ async function start() {
     const images = Array.isArray(payload.images) ? payload.images : [];
     allItems = images
       .map(normalize)
-      .filter((item) => item.thumbUrl && item.enddate >= MIN_DATE);
+      .filter((item) => item.thumbUrl);
     allItems.sort((a, b) => b.enddate.localeCompare(a.enddate));
     initYearFilter();
     applyFilters();

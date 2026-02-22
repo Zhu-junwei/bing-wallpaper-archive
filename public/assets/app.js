@@ -2,8 +2,8 @@
 const BING_HOST = "https://www.bing.com";
 const PAGE_SIZE = 36;
 const MIN_DATE = "20200101";
-const PREVIEW_WIDTH = 1280;
-const PREVIEW_HEIGHT = 720;
+const PREVIEW_WIDTH = 960;
+const PREVIEW_HEIGHT = 540;
 const MONTH_JUMP_BATCH = 120;
 const ALL_YEARS_VALUE = "";
 

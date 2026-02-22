@@ -526,17 +526,20 @@ body {
   --res-border-angle: 0turn;
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: -2px;
   border-radius: inherit;
-  padding: 1px;
+  padding: 2px;
   background: conic-gradient(
     from var(--res-border-angle),
-    rgba(142, 227, 255, 0.16),
-    rgba(142, 227, 255, 0.95),
-    rgba(255, 180, 117, 0.96),
-    rgba(142, 227, 255, 0.16)
+    rgba(132, 218, 255, 0.08) 0deg,
+    rgba(132, 218, 255, 0.96) 54deg,
+    rgba(255, 177, 112, 0.98) 116deg,
+    rgba(132, 218, 255, 0.12) 186deg,
+    rgba(255, 177, 112, 0.98) 262deg,
+    rgba(132, 218, 255, 0.08) 360deg
   );
-  animation: res-border-flow 1.05s linear infinite;
+  animation: res-border-flow 1.25s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(132, 218, 255, 0.45));
   pointer-events: none;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,

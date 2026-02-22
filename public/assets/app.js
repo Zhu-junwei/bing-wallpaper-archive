@@ -16,6 +16,7 @@ const searchInput = document.getElementById("searchInput");
 const yearFilter = document.getElementById("yearFilter");
 const sortOrder = document.getElementById("sortOrder");
 const randomBtn = document.getElementById("randomBtn");
+const backToTopBtn = document.getElementById("backToTopBtn");
 
 const heroImage = document.getElementById("heroImage");
 const heroDate = document.getElementById("heroDate");
@@ -813,6 +814,14 @@ function initYearFilter() {
   searchingAllYears = false;
 }
 
+function updateBackToTopVisibility() {
+  if (!backToTopBtn) {
+    return;
+  }
+  const offset = window.scrollY || document.documentElement.scrollTop || 0;
+  backToTopBtn.classList.toggle("show", offset > 680);
+}
+
 function bindEvents() {
   searchInput.addEventListener("input", () => {
     clearTimeout(searchTimer);
@@ -826,6 +835,11 @@ function bindEvents() {
   });
   sortOrder.addEventListener("change", applyFilters);
   loadMoreBtn.addEventListener("click", () => renderChunk(false));
+  if (backToTopBtn) {
+    backToTopBtn.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
 
   randomBtn.addEventListener("click", () => {
     if (!filteredItems.length) {
@@ -878,7 +892,10 @@ function bindEvents() {
     if (!viewerEl.hidden) {
       applyViewerRect(getZoomTargetRect());
     }
+    updateBackToTopVisibility();
   });
+  window.addEventListener("scroll", updateBackToTopVisibility, { passive: true });
+  updateBackToTopVisibility();
 }
 
 async function start() {

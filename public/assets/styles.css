@@ -621,6 +621,38 @@ body {
   color: #bdd9e8;
 }
 
+.back-top {
+  position: fixed;
+  right: 18px;
+  bottom: 22px;
+  z-index: 30;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(3, 78, 126, 0.38);
+  background: linear-gradient(145deg, rgba(248, 254, 255, 0.94), rgba(206, 236, 252, 0.92));
+  color: #0a4369;
+  font-family: "Orbitron", sans-serif;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(6, 33, 56, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.96);
+  transition: opacity 0.22s ease, transform 0.22s ease, border-color 0.2s ease;
+}
+
+.back-top.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.back-top:hover {
+  border-color: rgba(255, 166, 98, 0.9);
+}
+
 @media (max-width: 1080px) {
   .content-grid {
     grid-template-columns: 1fr;
@@ -663,6 +695,11 @@ body {
 
   .hero {
     padding: 14px;
+  }
+
+  .back-top {
+    right: 12px;
+    bottom: 14px;
   }
 }
 

@@ -52,29 +52,28 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px clamp(16px, 3vw, 48px);
-  backdrop-filter: blur(8px);
-  background: rgba(237, 246, 255, 0.75);
-  border-bottom: 1px solid rgba(0, 38, 73, 0.13);
+  padding: 8px clamp(12px, 2.2vw, 30px);
+  background: #eaf4ff;
+  border-bottom: 1px solid rgba(0, 38, 73, 0.22);
 }
 
 .brand {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .brand-kicker {
   font-family: "Orbitron", sans-serif;
   font-weight: 500;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.18em;
   color: #2c628f;
 }
 
 .brand strong {
   font-family: "Orbitron", sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   letter-spacing: 0.03em;
 }
 
@@ -83,7 +82,7 @@ body {
   color: var(--ink-0);
   border: 1px solid rgba(1, 53, 92, 0.25);
   border-radius: 999px;
-  padding: 9px 14px;
+  padding: 7px 12px;
   font-weight: 600;
   transition: 0.2s ease;
 }
@@ -95,9 +94,17 @@ body {
 
 .layout {
   width: min(1280px, calc(100% - 32px));
-  margin: 22px auto 60px;
+  margin: 12px auto 60px;
   display: grid;
   gap: 14px;
+}
+
+.sticky-filters {
+  position: sticky;
+  top: 56px;
+  z-index: 19;
+  display: grid;
+  gap: 10px;
 }
 
 .panel,
@@ -240,9 +247,9 @@ body {
 
 .month-panel {
   position: sticky;
-  top: 78px;
+  top: 176px;
   padding: 14px 10px;
-  max-height: calc(100vh - 92px);
+  max-height: calc(100vh - 190px);
   overflow: auto;
 }
 
@@ -689,6 +696,7 @@ body {
     align-items: flex-start;
     gap: 12px;
     flex-direction: column;
+    padding: 8px 12px;
   }
 
   .layout {
@@ -701,6 +709,10 @@ body {
 
   .hero {
     padding: 14px;
+  }
+
+  .sticky-filters {
+    top: 92px;
   }
 
   .back-top {

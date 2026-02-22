@@ -2,13 +2,13 @@
 const BING_HOST = "https://www.bing.com";
 const PAGE_SIZE = 36;
 const UHD_CUTOFF_DATE = "20190510";
-const PREVIEW_WIDTH = 640;
-const PREVIEW_HEIGHT = 360;
+const PREVIEW_WIDTH = 1024;
+const PREVIEW_HEIGHT = 576;
 const MONTH_JUMP_BATCH = 120;
 const ALL_YEARS_VALUE = "";
 const THUMB_PLACEHOLDER = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
-const UHD_SUFFIX = "_UHD.jpg&rf=LaDigue_UHD.jpg&pid=hp&w=1920&h=1080&rs=1&c=4";
-const HD_SUFFIX = "_1920x1080.jpg";
+const UHD_SUFFIX = "_UHD.jpg";
+const HD_SUFFIX = "_UHD.jpg&rf=LaDigue_UHD.jpg&pid=hp&w=1920&h=1080&rs=1&c=4";
 
 const galleryEl = document.getElementById("gallery");
 const monthNavEl = document.getElementById("monthNav");
@@ -114,23 +114,41 @@ function normalize(item) {
   const enddate = safeText(item.enddate, "");
   const urlPath = safeText(item.url, "");
   const urlbase = safeText(item.urlbase, "");
+  const beforeUhdCutoff = enddate && enddate < UHD_CUTOFF_DATE;
   const hasUrlbase = Boolean(urlbase);
-  const urlIsUhd = /_UHD\.jpg/i.test(urlPath);
+  const hasUhdInUrl = /_UHD\.jpg/i.test(urlPath);
+  const hasHdParamsInUrl = /_UHD\.jpg&/i.test(urlPath);
 
-  const hdUrlFromUrlbase = hasUrlbase ? toAbsolute(`${urlbase}${HD_SUFFIX}`) : "";
-  const uhdUrlFromUrlbase = hasUrlbase ? toAbsolute(`${urlbase}${UHD_SUFFIX}`) : "";
-
-  let hdUrl = hdUrlFromUrlbase || toAbsolute(urlPath);
-  if (urlIsUhd && !hdUrlFromUrlbase) {
-    hdUrl = toAbsolute(urlPath).replace(/_UHD\.jpg(?:&.*)?$/i, HD_SUFFIX);
+  // Before 2019-05-10, keep legacy 1080 URL exactly as provided in JSON.
+  if (beforeUhdCutoff) {
+    const legacyHdUrl = toAbsolute(urlPath);
+    return {
+      enddate,
+      year: enddate.slice(0, 4),
+      month: enddate.slice(0, 6),
+      dateLabel: formatDate(enddate),
+      title: safeText(item.title, "Bing Wallpaper"),
+      copyright: safeText(item.copyright, "No copyright text"),
+      copyrightlink: safeText(item.copyrightlink, ""),
+      hdUrl: legacyHdUrl,
+      uhdUrl: "",
+      hasUhd: false,
+      thumbUrl: legacyHdUrl
+    };
   }
 
-  const hasUhdByDate = enddate >= UHD_CUTOFF_DATE;
-  let uhdUrl = "";
-  if (hasUhdByDate) {
-    uhdUrl = urlIsUhd ? toAbsolute(urlPath) : uhdUrlFromUrlbase;
-  }
+  const uhdPath = hasUrlbase
+    ? `${urlbase}${UHD_SUFFIX}`
+    : (hasUhdInUrl ? urlPath.replace(/_UHD\.jpg(?:&.*)?$/i, "_UHD.jpg") : "");
+
+  const hdPath = hasHdParamsInUrl
+    ? urlPath
+    : (uhdPath ? `${uhdPath}&rf=LaDigue_UHD.jpg&pid=hp&w=1920&h=1080&rs=1&c=4` : urlPath);
+
+  const hdUrl = toAbsolute(hdPath);
+  const uhdUrl = uhdPath ? toAbsolute(uhdPath) : "";
   const hasUhd = Boolean(uhdUrl);
+  const thumbUrl = buildPreviewPath(hdUrl);
 
   return {
     enddate,
@@ -143,7 +161,7 @@ function normalize(item) {
     hdUrl,
     uhdUrl,
     hasUhd,
-    thumbUrl: hdUrl
+    thumbUrl
   };
 }
 
@@ -476,6 +494,8 @@ function showViewerItem(index, direction, options = {}) {
   if (!filteredItems.length) {
     return;
   }
+  const prevItem = viewerIndex >= 0 ? filteredItems[viewerIndex] : null;
+  const prevLowSrc = viewerLowImageEl.currentSrc || viewerLowImageEl.getAttribute("src") || "";
   viewerIndex = clamp(index, 0, filteredItems.length - 1);
   const token = ++viewerLoadToken;
   const item = filteredItems[viewerIndex];
@@ -484,11 +504,18 @@ function showViewerItem(index, direction, options = {}) {
   }
   const preferredSrc = getViewerSrc(item);
   const forcePreviewFirst = Boolean(options.forcePreviewFirst);
+  const keepCurrentBase = Boolean(options.keepCurrentBase);
+  const forceUpgradeAnimation = Boolean(options.forceUpgradeAnimation);
+  const showResolutionLoading = Boolean(options.showResolutionLoading);
 
-  let baseSrc = preferredSrc || item.thumbUrl || item.hdUrl;
-  if (forcePreviewFirst && item.thumbUrl) {
+  let baseSrc = "";
+  if (keepCurrentBase && prevItem && prevItem.enddate === item.enddate && prevLowSrc) {
+    baseSrc = prevLowSrc;
+  } else if (forcePreviewFirst && item.thumbUrl) {
     // For next/prev navigation, show preview first to keep transitions responsive.
     baseSrc = item.thumbUrl;
+  } else {
+    baseSrc = preferredSrc || item.thumbUrl || item.hdUrl;
   }
   if (baseSrc) {
     setViewerLowImage(baseSrc, item);
@@ -498,11 +525,19 @@ function showViewerItem(index, direction, options = {}) {
   runViewerSlide(shouldAnimateTransition ? direction : null);
 
   resetViewerHighLayer();
-  setViewerResolutionLoading(false);
   updateViewerMeta(item);
   updateViewerResButtons();
   updateViewerNavButtons();
   preloadViewerNeighbors(viewerIndex);
+
+  const shouldUpgrade = Boolean(preferredSrc) && (forceUpgradeAnimation || !baseSrc || preferredSrc !== baseSrc);
+  if (shouldUpgrade) {
+    loadViewerHighImage(item, token, {
+      showResolutionLoading: showResolutionLoading || !isImageReady(preferredSrc)
+    });
+  } else {
+    setViewerResolutionLoading(false);
+  }
 
   const currentCardImage = getItemImageElement(viewerIndex);
   if (currentCardImage) {
@@ -581,7 +616,11 @@ function switchViewerResolution(next) {
   viewerQualityTimer = setTimeout(() => {
     viewerEl.classList.remove("quality-switch");
   }, 620);
-  showViewerItem(viewerIndex, null, { keepCurrentBase: true });
+  showViewerItem(viewerIndex, null, {
+    keepCurrentBase: true,
+    forceUpgradeAnimation: true,
+    showResolutionLoading: Boolean(targetSrc && !isImageReady(targetSrc))
+  });
 }
 
 function goViewerNext() {

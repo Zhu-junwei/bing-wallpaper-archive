@@ -399,10 +399,15 @@ function showViewerItem(index, direction, options = {}) {
   const item = filteredItems[viewerIndex];
   const preferredSrc = getViewerSrc(item);
   const preferredReadyNow = isImageReady(preferredSrc);
+  const forcePreviewFirst = Boolean(options.forcePreviewFirst);
 
   let hasPreferredReady = false;
   const forceReveal = Boolean(options.forceReveal);
-  if (options.keepCurrentBase && viewerLowImageEl.getAttribute("src")) {
+  if (forcePreviewFirst && item.thumbUrl) {
+    // For next/prev navigation, show preview first to keep transitions responsive.
+    setViewerLowImage(item.thumbUrl, item);
+    hasPreferredReady = false;
+  } else if (options.keepCurrentBase && viewerLowImageEl.getAttribute("src")) {
     viewerLowImageEl.alt = `${item.title} ${item.dateLabel}`;
     if (preferredReadyNow) {
       if (forceReveal) {
@@ -508,14 +513,14 @@ function goViewerNext() {
   if (viewerIndex >= filteredItems.length - 1) {
     return;
   }
-  showViewerItem(viewerIndex + 1, "next");
+  showViewerItem(viewerIndex + 1, "next", { forcePreviewFirst: true });
 }
 
 function goViewerPrev() {
   if (viewerIndex <= 0) {
     return;
   }
-  showViewerItem(viewerIndex - 1, "prev");
+  showViewerItem(viewerIndex - 1, "prev", { forcePreviewFirst: true });
 }
 
 function renderHero(item) {

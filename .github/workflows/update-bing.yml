@@ -16,6 +16,11 @@ jobs:
       - name: Run update script
         run: bash update_bing.sh
 
+      - name: Sync data for Cloudflare Pages
+        run: |
+          mkdir -p public
+          cp Bing_zh-CN_all.json public/Bing_zh-CN_all.json
+
       - name: Check for changes
         id: git-check
         run: |

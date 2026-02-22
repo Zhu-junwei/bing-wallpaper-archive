@@ -1,0 +1,9 @@
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/Bing_zh-CN_all.json
+  Cache-Control: public, max-age=300, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff

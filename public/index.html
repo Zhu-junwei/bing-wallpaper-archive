@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bing Wallpaper Archive | Neon Gallery</title>
+  <meta name="description" content="Bing 每日壁纸归档的科幻风在线展示与下载站。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Chakra+Petch:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="grid-mask" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-kicker">BING WALLPAPER ARCHIVE</span>
+      <strong>Neon Gallery</strong>
+    </div>
+    <a class="top-link" href="https://github.com/Zhu-junwei/bing-wallpaper-archive" target="_blank" rel="noopener">GitHub 仓库</a>
+  </header>
+
+  <main class="layout">
+    <section class="hero" id="hero">
+      <div class="hero-copy">
+        <p class="hero-date" id="heroDate">--</p>
+        <h1 id="heroTitle">加载中...</h1>
+        <p id="heroCopyright">正在读取最新壁纸数据。</p>
+        <div class="hero-actions">
+          <a id="heroUhd" href="#" target="_blank" rel="noopener">下载 UHD</a>
+          <a id="heroHd" href="#" target="_blank" rel="noopener">下载 1080P</a>
+          <a id="heroLink" href="#" target="_blank" rel="noopener">Bing 介绍</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img id="heroImage" alt="Bing Wallpaper Hero">
+      </div>
+    </section>
+
+    <section class="panel controls">
+      <label>
+        搜索
+        <input id="searchInput" type="search" placeholder="按标题、版权、日期搜索">
+      </label>
+      <label>
+        年份
+        <select id="yearFilter">
+          <option value="all">全部年份</option>
+        </select>
+      </label>
+      <label>
+        排序
+        <select id="sortOrder">
+          <option value="newest">最新优先</option>
+          <option value="oldest">最早优先</option>
+        </select>
+      </label>
+      <button id="randomBtn" type="button">随机一张</button>
+    </section>
+
+    <section class="panel stats">
+      <span id="totalCount">总数: --</span>
+      <span id="filteredCount">当前筛选: --</span>
+      <span id="latestDate">最近更新: --</span>
+    </section>
+
+    <section class="gallery" id="gallery"></section>
+
+    <section class="load-wrap">
+      <button id="loadMoreBtn" type="button">加载更多</button>
+    </section>
+  </main>
+
+  <template id="cardTemplate">
+    <article class="card">
+      <div class="card-image-wrap">
+        <img loading="lazy" decoding="async" alt="">
+      </div>
+      <div class="card-body">
+        <p class="card-date"></p>
+        <h2 class="card-title"></h2>
+        <p class="card-copyright"></p>
+        <div class="card-actions">
+          <a class="btn-ghost card-uhd" target="_blank" rel="noopener">UHD</a>
+          <a class="btn-ghost card-hd" target="_blank" rel="noopener">1080P</a>
+          <a class="btn-ghost card-link" target="_blank" rel="noopener">Bing</a>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

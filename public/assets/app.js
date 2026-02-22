@@ -17,6 +17,8 @@ const yearFilter = document.getElementById("yearFilter");
 const sortOrder = document.getElementById("sortOrder");
 const randomBtn = document.getElementById("randomBtn");
 const backToTopBtn = document.getElementById("backToTopBtn");
+const topbarEl = document.querySelector(".topbar");
+const stickyFiltersEl = document.querySelector(".sticky-filters");
 
 const heroImage = document.getElementById("heroImage");
 const heroDate = document.getElementById("heroDate");
@@ -800,6 +802,7 @@ function applyFilters() {
   renderHero(filteredItems[0] || null);
   renderChunk(true);
   updateStats();
+  requestAnimationFrame(updateLayoutMetrics);
 }
 
 function initYearFilter() {
@@ -813,6 +816,16 @@ function initYearFilter() {
     userSelectedYear = ALL_YEARS_VALUE;
   }
   searchingAllYears = false;
+}
+
+function updateLayoutMetrics() {
+  const topbarHeight = topbarEl ? topbarEl.offsetHeight : 54;
+  const stickyFiltersHeight = stickyFiltersEl ? stickyFiltersEl.offsetHeight : 120;
+  const monthStickyTop = topbarHeight + stickyFiltersHeight + 12;
+  const heroScrollTop = topbarHeight + 12;
+  document.documentElement.style.setProperty("--topbar-height", `${topbarHeight}px`);
+  document.documentElement.style.setProperty("--month-sticky-top", `${monthStickyTop}px`);
+  document.documentElement.style.setProperty("--hero-scroll-top", `${heroScrollTop}px`);
 }
 
 function updateBackToTopVisibility() {
@@ -849,6 +862,7 @@ function bindEvents() {
     const index = Math.floor(Math.random() * filteredItems.length);
     const item = filteredItems[index];
     renderHero(item);
+    updateLayoutMetrics();
     document.getElementById("hero").scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
@@ -893,9 +907,12 @@ function bindEvents() {
     if (!viewerEl.hidden) {
       applyViewerRect(getZoomTargetRect());
     }
+    updateLayoutMetrics();
     updateBackToTopVisibility();
   });
+  window.addEventListener("load", updateLayoutMetrics);
   window.addEventListener("scroll", updateBackToTopVisibility, { passive: true });
+  updateLayoutMetrics();
   updateBackToTopVisibility();
 }
 

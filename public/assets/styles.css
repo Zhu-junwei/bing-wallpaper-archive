@@ -7,6 +7,9 @@
   --panel-border: rgba(4, 45, 76, 0.18);
   --card-0: #072742;
   --card-1: #0b3a60;
+  --topbar-height: 54px;
+  --month-sticky-top: 188px;
+  --hero-scroll-top: 66px;
 }
 
 @property --res-border-angle {
@@ -101,10 +104,20 @@ body {
 
 .sticky-filters {
   position: sticky;
-  top: 56px;
+  top: var(--topbar-height);
   z-index: 19;
   display: grid;
-  gap: 10px;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(3, 62, 101, 0.2);
+  background: #e9f4ff;
+  box-shadow: 0 10px 22px rgba(9, 37, 66, 0.14);
+}
+
+.sticky-filters .panel {
+  background: #f4f9ff;
+  box-shadow: none;
 }
 
 .panel,
@@ -121,6 +134,7 @@ body {
   gap: 20px;
   padding: 20px;
   animation: reveal-up 0.7s ease both;
+  scroll-margin-top: var(--hero-scroll-top);
 }
 
 .hero-copy {
@@ -247,9 +261,9 @@ body {
 
 .month-panel {
   position: sticky;
-  top: 176px;
+  top: var(--month-sticky-top);
   padding: 14px 10px;
-  max-height: calc(100vh - 190px);
+  max-height: calc(100vh - var(--month-sticky-top) - 14px);
   overflow: auto;
 }
 
@@ -693,9 +707,9 @@ body {
 
 @media (max-width: 620px) {
   .topbar {
-    align-items: flex-start;
-    gap: 12px;
-    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-direction: row;
     padding: 8px 12px;
   }
 
@@ -709,10 +723,6 @@ body {
 
   .hero {
     padding: 14px;
-  }
-
-  .sticky-filters {
-    top: 92px;
   }
 
   .back-top {

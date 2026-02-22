@@ -19,7 +19,7 @@ jobs:
       - name: Sync data for Cloudflare Pages
         run: |
           mkdir -p public
-          jq '{ images: [.images[] | select(.enddate >= "20200101")] }' \
+          jq '{ images: [.images[] | select(.enddate >= "20190510")] }' \
             Bing_zh-CN_all.json > public/Bing_zh-CN_all.json
 
       - name: Check for changes

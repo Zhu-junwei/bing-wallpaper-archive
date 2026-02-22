@@ -7,6 +7,8 @@ const PREVIEW_HEIGHT = 360;
 const MONTH_JUMP_BATCH = 120;
 const ALL_YEARS_VALUE = "";
 const THUMB_PLACEHOLDER = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+const UHD_SUFFIX = "_UHD.jpg&rf=LaDigue_UHD.jpg&pid=hp&w=1920&h=1080&rs=1&c=4";
+const HD_SUFFIX = "_1920x1080.jpg";
 
 const galleryEl = document.getElementById("gallery");
 const monthNavEl = document.getElementById("monthNav");
@@ -110,12 +112,26 @@ function buildPreviewPath(path) {
 
 function normalize(item) {
   const enddate = safeText(item.enddate, "");
-  const hdPath = safeText(item.url, "");
-  const hdUrl = toAbsolute(hdPath);
-  const hasUhd = enddate >= UHD_CUTOFF_DATE && Boolean(item.urlbase);
-  const uhdUrl = hasUhd
-    ? toAbsolute(`${item.urlbase}_UHD.jpg&rf=LaDigue_UHD.jpg&pid=hp&w=1920&h=1080&rs=1&c=4`)
-    : "";
+  const urlPath = safeText(item.url, "");
+  const urlbase = safeText(item.urlbase, "");
+  const hasUrlbase = Boolean(urlbase);
+  const urlIsUhd = /_UHD\.jpg/i.test(urlPath);
+
+  const hdUrlFromUrlbase = hasUrlbase ? toAbsolute(`${urlbase}${HD_SUFFIX}`) : "";
+  const uhdUrlFromUrlbase = hasUrlbase ? toAbsolute(`${urlbase}${UHD_SUFFIX}`) : "";
+
+  let hdUrl = hdUrlFromUrlbase || toAbsolute(urlPath);
+  if (urlIsUhd && !hdUrlFromUrlbase) {
+    hdUrl = toAbsolute(urlPath).replace(/_UHD\.jpg(?:&.*)?$/i, HD_SUFFIX);
+  }
+
+  const hasUhdByDate = enddate >= UHD_CUTOFF_DATE;
+  let uhdUrl = "";
+  if (hasUhdByDate) {
+    uhdUrl = urlIsUhd ? toAbsolute(urlPath) : uhdUrlFromUrlbase;
+  }
+  const hasUhd = Boolean(uhdUrl);
+
   return {
     enddate,
     year: enddate.slice(0, 4),

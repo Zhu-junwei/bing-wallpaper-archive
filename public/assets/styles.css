@@ -519,27 +519,28 @@ body {
 .viewer-res-btn.loading {
   border-color: transparent;
   color: #d8f2ff;
-  background: rgba(13, 34, 53, 0.34);
+  background: rgba(10, 28, 44, 0.48);
 }
 
 .viewer-res-btn.loading::before {
   --res-border-angle: 0turn;
   content: "";
   position: absolute;
-  inset: -2px;
+  inset: -3px;
   border-radius: inherit;
-  padding: 2px;
+  padding: 3px;
   background: conic-gradient(
     from var(--res-border-angle),
-    rgba(132, 218, 255, 0.08) 0deg,
-    rgba(132, 218, 255, 0.96) 54deg,
-    rgba(255, 177, 112, 0.98) 116deg,
-    rgba(132, 218, 255, 0.12) 186deg,
-    rgba(255, 177, 112, 0.98) 262deg,
-    rgba(132, 218, 255, 0.08) 360deg
+    rgba(126, 219, 255, 0.02) 0deg,
+    rgba(126, 219, 255, 0.16) 26deg,
+    rgba(126, 219, 255, 1) 58deg,
+    rgba(255, 179, 109, 1) 124deg,
+    rgba(126, 219, 255, 0.16) 192deg,
+    rgba(255, 179, 109, 1) 256deg,
+    rgba(126, 219, 255, 0.02) 360deg
   );
-  animation: res-border-flow 1.25s linear infinite;
-  filter: drop-shadow(0 0 6px rgba(132, 218, 255, 0.45));
+  animation: res-border-flow 0.78s linear infinite, res-border-glow 0.92s ease-in-out infinite;
+  filter: drop-shadow(0 0 9px rgba(126, 219, 255, 0.62));
   pointer-events: none;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -763,5 +764,17 @@ body {
 @keyframes res-border-flow {
   to {
     --res-border-angle: 1turn;
+  }
+}
+
+@keyframes res-border-glow {
+  0% {
+    opacity: 0.78;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.78;
   }
 }

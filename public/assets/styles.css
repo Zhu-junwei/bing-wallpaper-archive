@@ -3,9 +3,6 @@
   --bg-1: #dce9ff;
   --bg-2: #d4fff6;
   --ink-0: #03203a;
-  --ink-1: #1a3554;
-  --accent-cyan: #00d5ff;
-  --accent-orange: #ff8a3d;
   --panel: rgba(255, 255, 255, 0.78);
   --panel-border: rgba(4, 45, 76, 0.18);
   --card-0: #072742;
@@ -38,20 +35,8 @@ body {
   pointer-events: none;
   background:
     linear-gradient(rgba(255, 255, 255, 0.2), transparent 20%),
-    repeating-linear-gradient(
-      90deg,
-      rgba(5, 40, 70, 0.05) 0,
-      rgba(5, 40, 70, 0.05) 1px,
-      transparent 1px,
-      transparent 48px
-    ),
-    repeating-linear-gradient(
-      0deg,
-      rgba(5, 40, 70, 0.05) 0,
-      rgba(5, 40, 70, 0.05) 1px,
-      transparent 1px,
-      transparent 48px
-    );
+    repeating-linear-gradient(90deg, rgba(5, 40, 70, 0.05) 0, rgba(5, 40, 70, 0.05) 1px, transparent 1px, transparent 48px),
+    repeating-linear-gradient(0deg, rgba(5, 40, 70, 0.05) 0, rgba(5, 40, 70, 0.05) 1px, transparent 1px, transparent 48px);
 }
 
 .topbar {
@@ -103,7 +88,7 @@ body {
 }
 
 .layout {
-  width: min(1240px, calc(100% - 32px));
+  width: min(1280px, calc(100% - 32px));
   margin: 22px auto 60px;
   display: grid;
   gap: 14px;
@@ -187,6 +172,7 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+  cursor: zoom-in;
   animation: hero-float 14s linear infinite;
 }
 
@@ -233,6 +219,55 @@ body {
   font-size: 14px;
 }
 
+.content-grid {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.month-panel {
+  position: sticky;
+  top: 78px;
+  padding: 14px 10px;
+  max-height: calc(100vh - 92px);
+  overflow: auto;
+}
+
+.month-panel h2 {
+  margin: 2px 6px 10px;
+  font-family: "Orbitron", sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: #1f547e;
+}
+
+.month-nav {
+  display: grid;
+  gap: 6px;
+}
+
+.month-btn {
+  border: 1px solid rgba(1, 53, 92, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  color: var(--ink-0);
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+  font-family: "Chakra Petch", sans-serif;
+}
+
+.month-btn:hover,
+.month-btn.active {
+  border-color: rgba(0, 160, 205, 0.9);
+  background: linear-gradient(130deg, rgba(0, 213, 255, 0.18), rgba(255, 138, 61, 0.19));
+}
+
+.gallery-panel {
+  min-width: 0;
+}
+
 .gallery {
   display: grid;
   gap: 14px;
@@ -250,7 +285,8 @@ body {
   transform: translateY(10px);
   opacity: 0;
   animation: card-in 0.48s ease forwards;
-  animation-delay: calc(var(--index, 0) * 24ms);
+  animation-delay: calc(var(--index, 0) * 18ms);
+  scroll-margin-top: 90px;
 }
 
 .card-image-wrap {
@@ -263,6 +299,12 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+  cursor: zoom-in;
+  transition: transform 0.25s ease;
+}
+
+.card:hover .card-image-wrap img {
+  transform: scale(1.08);
 }
 
 .card-body {
@@ -317,6 +359,7 @@ body {
 .load-wrap {
   display: flex;
   justify-content: center;
+  margin-top: 14px;
 }
 
 #loadMoreBtn {
@@ -345,6 +388,53 @@ body {
   background: rgba(255, 255, 255, 0.68);
 }
 
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+}
+
+.viewer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 12, 24, 0.84);
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.viewer.open .viewer-backdrop {
+  opacity: 1;
+}
+
+.viewer-image {
+  position: fixed;
+  z-index: 1;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.5);
+  transition: top 0.32s ease, left 0.32s ease, width 0.32s ease, height 0.32s ease, border-radius 0.32s ease;
+  cursor: zoom-out;
+}
+
+.viewer.open .viewer-image {
+  border-radius: 18px;
+}
+
+@media (max-width: 1080px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .month-panel {
+    position: static;
+    max-height: none;
+  }
+
+  .month-nav {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+}
+
 @media (max-width: 980px) {
   .hero {
     grid-template-columns: 1fr;
@@ -363,7 +453,7 @@ body {
   }
 
   .layout {
-    width: min(1240px, calc(100% - 20px));
+    width: min(1280px, calc(100% - 20px));
   }
 
   .controls {

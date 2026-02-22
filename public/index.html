@@ -64,10 +64,18 @@
       <span id="latestDate">最近更新: --</span>
     </section>
 
-    <section class="gallery" id="gallery"></section>
+    <section class="content-grid">
+      <aside class="panel month-panel">
+        <h2>月份定位</h2>
+        <div id="monthNav" class="month-nav"></div>
+      </aside>
 
-    <section class="load-wrap">
-      <button id="loadMoreBtn" type="button">加载更多</button>
+      <section class="gallery-panel">
+        <section class="gallery" id="gallery"></section>
+        <section class="load-wrap">
+          <button id="loadMoreBtn" type="button">加载更多</button>
+        </section>
+      </section>
     </section>
   </main>
 
@@ -88,6 +96,11 @@
       </div>
     </article>
   </template>
+
+  <div id="viewer" class="viewer" hidden>
+    <div id="viewerBackdrop" class="viewer-backdrop"></div>
+    <img id="viewerImage" class="viewer-image" alt="">
+  </div>
 
   <script src="assets/app.js" defer></script>
 </body>

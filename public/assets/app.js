@@ -1,8 +1,12 @@
 const DATA_FILE = "./Bing_zh-CN_all.json";
 const BING_HOST = "https://www.bing.com";
 const PAGE_SIZE = 36;
+const MIN_DATE = "20200101";
+const PREVIEW_WIDTH = 1280;
+const PREVIEW_HEIGHT = 720;
 
 const galleryEl = document.getElementById("gallery");
+const monthNavEl = document.getElementById("monthNav");
 const templateEl = document.getElementById("cardTemplate");
 const loadMoreBtn = document.getElementById("loadMoreBtn");
 const searchInput = document.getElementById("searchInput");
@@ -22,10 +26,18 @@ const totalCountEl = document.getElementById("totalCount");
 const filteredCountEl = document.getElementById("filteredCount");
 const latestDateEl = document.getElementById("latestDate");
 
+const viewerEl = document.getElementById("viewer");
+const viewerBackdropEl = document.getElementById("viewerBackdrop");
+const viewerImageEl = document.getElementById("viewerImage");
+
 let allItems = [];
 let filteredItems = [];
 let renderedCount = 0;
 let searchTimer = null;
+let monthStartIndexMap = new Map();
+let heroItem = null;
+let viewerOriginImage = null;
+let viewerCloseTimer = null;
 
 function formatDate(enddate) {
   if (!/^\d{8}$/.test(enddate || "")) {
@@ -43,27 +55,121 @@ function toAbsolute(path) {
   if (!path) {
     return "";
   }
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
   return `${BING_HOST}${path}`;
+}
+
+function setQueryValue(path, key, value) {
+  const pattern = new RegExp(`([?&])${key}=\\d+`);
+  if (pattern.test(path)) {
+    return path.replace(pattern, `$1${key}=${value}`);
+  }
+  const join = path.includes("?") ? "&" : "?";
+  return `${path}${join}${key}=${value}`;
+}
+
+function buildPreviewPath(path) {
+  if (!path) {
+    return "";
+  }
+  let next = path;
+  next = setQueryValue(next, "w", PREVIEW_WIDTH);
+  next = setQueryValue(next, "h", PREVIEW_HEIGHT);
+  return next;
 }
 
 function normalize(item) {
   const enddate = safeText(item.enddate, "");
-  const hdUrl = toAbsolute(item.url);
+  const hdPath = safeText(item.url, "");
+  const previewPath = buildPreviewPath(hdPath);
+  const hdUrl = toAbsolute(hdPath);
+  const previewUrl = toAbsolute(previewPath);
   const uhdUrl = item.urlbase ? toAbsolute(`${item.urlbase}_UHD.jpg`) : hdUrl;
   return {
     enddate,
-    dateLabel: formatDate(enddate),
     year: enddate.slice(0, 4),
+    month: enddate.slice(0, 6),
+    dateLabel: formatDate(enddate),
     title: safeText(item.title, "Bing Wallpaper"),
     copyright: safeText(item.copyright, "No copyright text"),
     copyrightlink: safeText(item.copyrightlink, ""),
     hdUrl,
     uhdUrl,
-    thumbUrl: hdUrl || uhdUrl
+    thumbUrl: previewUrl || hdUrl
   };
 }
 
+function getZoomTargetRect() {
+  const ratio = viewerImageEl.naturalWidth && viewerImageEl.naturalHeight
+    ? viewerImageEl.naturalWidth / viewerImageEl.naturalHeight
+    : 16 / 9;
+  const maxWidth = window.innerWidth * 0.92;
+  const maxHeight = window.innerHeight * 0.92;
+  let width = maxWidth;
+  let height = width / ratio;
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * ratio;
+  }
+  return {
+    top: (window.innerHeight - height) / 2,
+    left: (window.innerWidth - width) / 2,
+    width,
+    height
+  };
+}
+
+function applyViewerRect(rect) {
+  viewerImageEl.style.top = `${rect.top}px`;
+  viewerImageEl.style.left = `${rect.left}px`;
+  viewerImageEl.style.width = `${rect.width}px`;
+  viewerImageEl.style.height = `${rect.height}px`;
+}
+
+function closeViewer() {
+  if (viewerEl.hidden) {
+    return;
+  }
+  const origin = viewerOriginImage && document.body.contains(viewerOriginImage)
+    ? viewerOriginImage.getBoundingClientRect()
+    : null;
+  viewerEl.classList.remove("open");
+  if (origin) {
+    applyViewerRect(origin);
+  }
+  clearTimeout(viewerCloseTimer);
+  viewerCloseTimer = setTimeout(() => {
+    viewerEl.hidden = true;
+    document.body.style.overflow = "";
+    viewerImageEl.removeAttribute("src");
+  }, 340);
+}
+
+function openViewer(item, sourceImage) {
+  if (!item || !sourceImage) {
+    return;
+  }
+  clearTimeout(viewerCloseTimer);
+  viewerOriginImage = sourceImage;
+  const startRect = sourceImage.getBoundingClientRect();
+  viewerImageEl.src = item.hdUrl;
+  viewerImageEl.alt = `${item.title} ${item.dateLabel}`;
+  viewerEl.hidden = false;
+  viewerEl.classList.remove("open");
+  document.body.style.overflow = "hidden";
+  applyViewerRect(startRect);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      applyViewerRect(getZoomTargetRect());
+      viewerEl.classList.add("open");
+    });
+  });
+}
+
 function renderHero(item) {
+  heroItem = item || null;
   if (!item) {
     heroDate.textContent = "--";
     heroTitle.textContent = "未找到结果";
@@ -93,9 +199,12 @@ function cardFromItem(item, idx) {
   const hd = fragment.querySelector(".card-hd");
   const link = fragment.querySelector(".card-link");
 
+  card.dataset.index = String(idx);
+  card.dataset.month = item.month;
   card.style.setProperty("--index", String(idx));
   img.src = item.thumbUrl;
   img.alt = `${item.title} ${item.dateLabel}`;
+  img.addEventListener("click", () => openViewer(item, img));
   date.textContent = item.dateLabel;
   title.textContent = item.title;
   copyright.textContent = item.copyright;
@@ -107,7 +216,7 @@ function cardFromItem(item, idx) {
 }
 
 function updateStats() {
-  totalCountEl.textContent = `总数: ${allItems.length}`;
+  totalCountEl.textContent = `总数(2020+): ${allItems.length}`;
   filteredCountEl.textContent = `当前筛选: ${filteredItems.length}`;
   latestDateEl.textContent = `最近更新: ${allItems[0] ? allItems[0].dateLabel : "--"}`;
 }
@@ -136,6 +245,56 @@ function renderChunk(reset = false) {
   loadMoreBtn.hidden = renderedCount >= filteredItems.length;
 }
 
+function ensureRenderedTo(targetIndex) {
+  while (renderedCount <= targetIndex && renderedCount < filteredItems.length) {
+    renderChunk(false);
+  }
+}
+
+function setActiveMonth(monthKey) {
+  const buttons = monthNavEl.querySelectorAll(".month-btn");
+  for (const button of buttons) {
+    button.classList.toggle("active", button.dataset.month === monthKey);
+  }
+}
+
+function jumpToMonth(monthKey) {
+  const targetIndex = monthStartIndexMap.get(monthKey);
+  if (targetIndex == null) {
+    return;
+  }
+  ensureRenderedTo(targetIndex);
+  const card = galleryEl.querySelector(`.card[data-index="${targetIndex}"]`);
+  if (!card) {
+    return;
+  }
+  setActiveMonth(monthKey);
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderMonthNav() {
+  monthStartIndexMap = new Map();
+  monthNavEl.innerHTML = "";
+  filteredItems.forEach((item, index) => {
+    if (!monthStartIndexMap.has(item.month)) {
+      monthStartIndexMap.set(item.month, index);
+    }
+  });
+  for (const monthKey of monthStartIndexMap.keys()) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "month-btn";
+    button.dataset.month = monthKey;
+    button.textContent = `${monthKey.slice(0, 4)}-${monthKey.slice(4, 6)}`;
+    button.addEventListener("click", () => jumpToMonth(monthKey));
+    monthNavEl.appendChild(button);
+  }
+  const firstMonth = monthStartIndexMap.keys().next().value;
+  if (firstMonth) {
+    setActiveMonth(firstMonth);
+  }
+}
+
 function applyFilters() {
   const keyword = searchInput.value.trim().toLowerCase();
   const year = yearFilter.value;
@@ -162,6 +321,7 @@ function applyFilters() {
     return b.enddate.localeCompare(a.enddate);
   });
 
+  renderMonthNav();
   renderHero(filteredItems[0]);
   renderChunk(true);
   updateStats();
@@ -196,6 +356,30 @@ function bindEvents() {
     renderHero(item);
     document.getElementById("hero").scrollIntoView({ behavior: "smooth", block: "start" });
   });
+
+  heroImage.addEventListener("click", () => {
+    if (heroItem) {
+      openViewer(heroItem, heroImage);
+    }
+  });
+
+  viewerBackdropEl.addEventListener("click", closeViewer);
+  viewerImageEl.addEventListener("click", closeViewer);
+  viewerImageEl.addEventListener("load", () => {
+    if (!viewerEl.hidden) {
+      applyViewerRect(getZoomTargetRect());
+    }
+  });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeViewer();
+    }
+  });
+  window.addEventListener("resize", () => {
+    if (!viewerEl.hidden) {
+      applyViewerRect(getZoomTargetRect());
+    }
+  });
 }
 
 async function start() {
@@ -207,7 +391,9 @@ async function start() {
     }
     const payload = await response.json();
     const images = Array.isArray(payload.images) ? payload.images : [];
-    allItems = images.map(normalize).filter((item) => item.thumbUrl);
+    allItems = images
+      .map(normalize)
+      .filter((item) => item.thumbUrl && item.enddate >= MIN_DATE);
     initYearFilter();
     applyFilters();
   } catch (error) {

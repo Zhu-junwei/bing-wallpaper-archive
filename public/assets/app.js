@@ -65,9 +65,14 @@ let viewerLoadToken = 0;
 let viewerResolutionLoading = false;
 const imageLoadState = new Map();
 let thumbObserver = null;
+let autoLoadObserver = null;
 let availableYears = [];
 let userSelectedYear = "";
 let searchingAllYears = false;
+let activeMonthKey = "";
+let monthSyncRaf = 0;
+let autoLoadCheckRaf = 0;
+let chunkRenderInProgress = false;
 
 function formatDate(enddate) {
   if (!/^\d{8}$/.test(enddate || "")) {
@@ -284,6 +289,106 @@ function initThumbObserver() {
     root: null,
     rootMargin: "320px 0px",
     threshold: 0.01
+  });
+}
+
+function initAutoLoadObserver() {
+  if (!loadMoreBtn || typeof window === "undefined" || !("IntersectionObserver" in window)) {
+    autoLoadObserver = null;
+    return;
+  }
+  autoLoadObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        scheduleAutoLoadCheck();
+      }
+    }
+  }, {
+    root: null,
+    rootMargin: "420px 0px",
+    threshold: 0.01
+  });
+  autoLoadObserver.observe(loadMoreBtn);
+}
+
+function getMonthAnchorTop() {
+  const topbarBottom = topbarEl ? topbarEl.getBoundingClientRect().bottom : 0;
+  const stickyBottom = stickyFiltersEl ? stickyFiltersEl.getBoundingClientRect().bottom : topbarBottom;
+  return Math.max(topbarBottom, stickyBottom) + 8;
+}
+
+function getActiveMonthByScroll() {
+  const monthEntries = [...monthStartIndexMap.entries()];
+  if (!monthEntries.length) {
+    return "";
+  }
+
+  const anchorTop = getMonthAnchorTop();
+  let candidate = "";
+
+  for (const [monthKey, startIndex] of monthEntries) {
+    const card = galleryEl.querySelector(`.card[data-index="${startIndex}"]`);
+    if (!card) {
+      break;
+    }
+    const rect = card.getBoundingClientRect();
+    if (rect.top <= anchorTop) {
+      candidate = monthKey;
+      continue;
+    }
+    if (!candidate) {
+      candidate = monthKey;
+    }
+    break;
+  }
+
+  if (candidate) {
+    return candidate;
+  }
+
+  const cards = galleryEl.querySelectorAll(".card[data-month]");
+  if (!cards.length) {
+    return "";
+  }
+  const lastCard = cards[cards.length - 1];
+  return lastCard.dataset.month || "";
+}
+
+function syncMonthByScroll() {
+  const monthKey = getActiveMonthByScroll();
+  if (!monthKey) {
+    return;
+  }
+  setActiveMonth(monthKey);
+}
+
+function scheduleMonthSync() {
+  if (monthSyncRaf) {
+    return;
+  }
+  monthSyncRaf = requestAnimationFrame(() => {
+    monthSyncRaf = 0;
+    syncMonthByScroll();
+  });
+}
+
+function maybeAutoLoadMore() {
+  if (chunkRenderInProgress || !loadMoreBtn || loadMoreBtn.hidden || renderedCount >= filteredItems.length) {
+    return;
+  }
+  const rect = loadMoreBtn.getBoundingClientRect();
+  if (rect.top <= window.innerHeight + 260) {
+    renderChunk(false);
+  }
+}
+
+function scheduleAutoLoadCheck() {
+  if (autoLoadCheckRaf) {
+    return;
+  }
+  autoLoadCheckRaf = requestAnimationFrame(() => {
+    autoLoadCheckRaf = 0;
+    maybeAutoLoadMore();
   });
 }
 
@@ -700,6 +805,7 @@ function appendRange(start, end) {
     fragment.appendChild(cardFromItem(filteredItems[i], i));
   }
   galleryEl.appendChild(fragment);
+  scheduleMonthSync();
 }
 
 function refreshLoadMoreVisibility() {
@@ -707,6 +813,10 @@ function refreshLoadMoreVisibility() {
 }
 
 function renderChunk(reset = false) {
+  if (chunkRenderInProgress) {
+    return;
+  }
+  chunkRenderInProgress = true;
   if (reset) {
     if (thumbObserver) {
       thumbObserver.disconnect();
@@ -720,12 +830,15 @@ function renderChunk(reset = false) {
     empty.textContent = "没有匹配的壁纸。";
     galleryEl.appendChild(empty);
     loadMoreBtn.hidden = true;
+    chunkRenderInProgress = false;
     return;
   }
   const nextEnd = Math.min(filteredItems.length, renderedCount + PAGE_SIZE);
   appendRange(renderedCount, nextEnd);
   renderedCount = nextEnd;
   refreshLoadMoreVisibility();
+  chunkRenderInProgress = false;
+  scheduleAutoLoadCheck();
 }
 
 function ensureRenderedTo(targetIndex, options = {}) {
@@ -757,9 +870,14 @@ function ensureRenderedTo(targetIndex, options = {}) {
 }
 
 function setActiveMonth(monthKey) {
+  const normalizedMonthKey = monthKey || "";
+  if (normalizedMonthKey === activeMonthKey) {
+    return;
+  }
+  activeMonthKey = normalizedMonthKey;
   const buttons = monthNavEl.querySelectorAll(".month-btn");
   for (const button of buttons) {
-    button.classList.toggle("active", button.dataset.month === monthKey);
+    button.classList.toggle("active", button.dataset.month === normalizedMonthKey);
   }
 }
 
@@ -781,6 +899,7 @@ async function jumpToMonth(monthKey) {
 
 function renderMonthNav() {
   monthStartIndexMap = new Map();
+  activeMonthKey = "";
   monthNavEl.innerHTML = "";
   filteredItems.forEach((item, index) => {
     if (!monthStartIndexMap.has(item.month)) {
@@ -858,6 +977,8 @@ function applyFilters() {
   renderChunk(true);
   updateStats();
   requestAnimationFrame(updateLayoutMetrics);
+  scheduleMonthSync();
+  scheduleAutoLoadCheck();
 }
 
 function initYearFilter() {
@@ -964,15 +1085,24 @@ function bindEvents() {
     }
     updateLayoutMetrics();
     updateBackToTopVisibility();
+    scheduleMonthSync();
+    scheduleAutoLoadCheck();
   });
   window.addEventListener("load", updateLayoutMetrics);
-  window.addEventListener("scroll", updateBackToTopVisibility, { passive: true });
+  window.addEventListener("scroll", () => {
+    updateBackToTopVisibility();
+    scheduleMonthSync();
+    scheduleAutoLoadCheck();
+  }, { passive: true });
   updateLayoutMetrics();
   updateBackToTopVisibility();
+  scheduleMonthSync();
+  scheduleAutoLoadCheck();
 }
 
 async function start() {
   initThumbObserver();
+  initAutoLoadObserver();
   bindEvents();
   try {
     const response = await fetch(DATA_FILE, { cache: "no-store" });

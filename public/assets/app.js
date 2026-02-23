@@ -75,6 +75,7 @@ let monthSyncRaf = 0;
 let autoLoadCheckRaf = 0;
 let chunkRenderInProgress = false;
 const AUTO_LOAD_TRIGGER_DISTANCE = 640;
+const MONTH_ACTIVATE_OFFSET = 24;
 
 function formatDate(enddate) {
   if (!/^\d{8}$/.test(enddate || "")) {
@@ -320,49 +321,27 @@ function getMonthAnchorTop() {
 }
 
 function getActiveMonthByScroll() {
-  const cards = galleryEl.querySelectorAll(".card[data-month]");
-  if (!cards.length) {
+  const monthEntries = [...monthStartIndexMap.entries()];
+  if (!monthEntries.length) {
     return "";
   }
 
-  const anchorTop = getMonthAnchorTop();
-  let fallbackMonth = "";
-  for (const card of cards) {
+  const activationTop = getMonthAnchorTop() + MONTH_ACTIVATE_OFFSET;
+  let candidate = monthEntries[0][0];
+  for (const [monthKey, startIndex] of monthEntries) {
+    const card = galleryEl.querySelector(`.card[data-index="${startIndex}"]`);
+    if (!card) {
+      break;
+    }
     const rect = card.getBoundingClientRect();
-    const cardMonth = card.dataset.month || "";
-    if (!cardMonth) {
+    if (rect.top <= activationTop) {
+      candidate = monthKey;
       continue;
     }
-
-    if (rect.bottom < anchorTop - 1) {
-      fallbackMonth = cardMonth;
-      continue;
-    }
-
-    // Prefer the first card whose top is at/under the anchor line.
-    if (rect.top >= anchorTop - 2) {
-      return cardMonth;
-    }
-
-    // Fallback for tall cards crossing the anchor line.
-    if (!fallbackMonth) {
-      fallbackMonth = cardMonth;
-    }
+    break;
   }
 
-  if (fallbackMonth) {
-    return fallbackMonth;
-  }
-
-  for (const card of cards) {
-    const rect = card.getBoundingClientRect();
-    if (rect.bottom >= anchorTop) {
-      return card.dataset.month || "";
-    }
-  }
-
-  const lastCard = cards[cards.length - 1];
-  return lastCard.dataset.month || "";
+  return candidate;
 }
 
 function syncMonthByScroll() {
@@ -920,12 +899,16 @@ async function jumpToMonth(monthKey) {
   await ensureRenderedTo(targetIndex, { immediate: true });
   const card = galleryEl.querySelector(`.card[data-index="${targetIndex}"]`);
   if (card) {
-    // Align target month card with the same sticky anchor used by month sync.
-    const targetY = window.scrollY + card.getBoundingClientRect().top - getMonthAnchorTop() - 2;
+    // Align with the same activation line used by month scroll sync.
+    const targetY = window.scrollY + card.getBoundingClientRect().top - (getMonthAnchorTop() + MONTH_ACTIVATE_OFFSET) + 2;
     window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
     requestAnimationFrame(() => {
       prioritizeMonthThumbs(monthKey);
     });
+    // Re-check auto loading after jump animation starts.
+    setTimeout(() => {
+      scheduleAutoLoadCheck();
+    }, 220);
   }
 }
 

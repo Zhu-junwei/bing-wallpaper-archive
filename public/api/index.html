@@ -39,7 +39,7 @@
     }
 
     .wrap {
-      width: min(960px, 100%);
+      width: min(980px, 100%);
       margin: 0 auto;
       display: grid;
       gap: 12px;
@@ -137,7 +137,7 @@
     </section>
 
     <section class="panel">
-      <h2>接口地址</h2>
+      <h2>JSON 接口</h2>
       <ul class="api-list">
         <li class="api-item">
           <strong>全量数据</strong>
@@ -164,6 +164,29 @@
     </section>
 
     <section class="panel">
+      <h2>图片直链接口</h2>
+      <ul class="api-list">
+        <li class="api-item">
+          <strong>默认 1080P</strong>
+          <code id="urlImgHd">--</code>
+        </li>
+        <li class="api-item">
+          <strong>UHD 原图</strong>
+          <code id="urlImgUhd">--</code>
+        </li>
+        <li class="api-item">
+          <strong>自定义分辨率</strong>
+          <code id="urlImgCustom">--</code>
+        </li>
+      </ul>
+      <ul class="path-list">
+        <li><code>res</code> 支持：<code>hd</code>、<code>uhd</code></li>
+        <li>自定义分辨率使用：<code>w</code> + <code>h</code>，例如 <code>?w=2560&h=1440</code></li>
+        <li><code>2019-05-10</code>（含）之前的图片仅返回 1080P，忽略 <code>res/w/h</code></li>
+      </ul>
+    </section>
+
+    <section class="panel">
       <h2>调用示例</h2>
       <pre id="fetchExample">--</pre>
       <pre id="curlExample">--</pre>
@@ -179,9 +202,12 @@
       var origin = window.location.origin;
       var endpoints = {
         all: origin + "/Bing_zh-CN_all.json",
-        year: origin + "/2025/all.json",
-        month: origin + "/2025/12/all.json",
-        day: origin + "/2025/12/20.json"
+        year: origin + "/api/2025/all",
+        month: origin + "/api/2025/12/all",
+        day: origin + "/api/2025/12/20",
+        imgHd: origin + "/img/2025/12/20?res=hd",
+        imgUhd: origin + "/img/2025/12/20?res=uhd",
+        imgCustom: origin + "/img/2025/12/20?w=2560&h=1440"
       };
 
       document.getElementById("originText").textContent = origin;
@@ -189,14 +215,20 @@
       document.getElementById("urlYear").textContent = endpoints.year;
       document.getElementById("urlMonth").textContent = endpoints.month;
       document.getElementById("urlDay").textContent = endpoints.day;
+      document.getElementById("urlImgHd").textContent = endpoints.imgHd;
+      document.getElementById("urlImgUhd").textContent = endpoints.imgUhd;
+      document.getElementById("urlImgCustom").textContent = endpoints.imgCustom;
 
       document.getElementById("fetchExample").textContent =
-        "const res = await fetch(\"" + endpoints.day + "\");\n" +
-        "const data = await res.json();\n" +
-        "console.log(data.images);";
+        "const jsonRes = await fetch(\"" + endpoints.day + "\");\n" +
+        "const jsonData = await jsonRes.json();\n" +
+        "console.log(jsonData.images);\n\n" +
+        "const imgUrl = \"" + endpoints.imgCustom + "\";\n" +
+        "document.querySelector(\"img\").src = imgUrl;";
 
       document.getElementById("curlExample").textContent =
-        "curl \"" + endpoints.month + "\"";
+        "curl \"" + endpoints.month + "\"\n" +
+        "curl -L -o bing.jpg \"" + endpoints.imgUhd + "\"";
     })();
   </script>
 </body>

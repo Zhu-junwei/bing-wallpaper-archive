@@ -1,5 +1,7 @@
 const DATASET_PATH = "/Bing_zh-CN_all.json";
 const DATASET_CACHE_TTL_MS = 5 * 60 * 1000;
+export const UHD_CUTOFF_DATE = "20190510";
+const BING_HOST = "https://www.bing.com";
 
 const BASE_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -32,7 +34,17 @@ export function isValidDay(value) {
   return /^(0[1-9]|[12]\d|3[01])$/.test(value);
 }
 
-async function loadImages(context) {
+export function toBingAbsolute(path) {
+  if (!path) {
+    return "";
+  }
+  if (path.startsWith("https://") || path.startsWith("http://")) {
+    return path;
+  }
+  return `${BING_HOST}${path}`;
+}
+
+export async function loadImages(context) {
   const now = Date.now();
   if (datasetCache.images && now < datasetCache.expiresAt) {
     return datasetCache.images;
@@ -58,6 +70,11 @@ async function loadImages(context) {
   };
 
   return payload.images;
+}
+
+export async function findImageByEnddate(context, enddate) {
+  const images = await loadImages(context);
+  return images.find((image) => image?.enddate === enddate) || null;
 }
 
 export async function serveFilteredImages(context, predicate) {

@@ -76,6 +76,10 @@ let autoLoadCheckRaf = 0;
 let chunkRenderInProgress = false;
 const AUTO_LOAD_TRIGGER_DISTANCE = 640;
 const MONTH_ACTIVATE_OFFSET = 24;
+const MONTH_SWITCH_TOLERANCE = 18;
+const MONTH_JUMP_LOCK_MS = 1400;
+let monthLockKey = "";
+let monthLockUntil = 0;
 
 function formatDate(enddate) {
   if (!/^\d{8}$/.test(enddate || "")) {
@@ -334,7 +338,7 @@ function getActiveMonthByScroll() {
       break;
     }
     const rect = card.getBoundingClientRect();
-    if (rect.top <= activationTop) {
+    if (rect.top <= activationTop + MONTH_SWITCH_TOLERANCE) {
       candidate = monthKey;
       continue;
     }
@@ -345,6 +349,15 @@ function getActiveMonthByScroll() {
 }
 
 function syncMonthByScroll() {
+  if (monthLockKey && Date.now() < monthLockUntil) {
+    setActiveMonth(monthLockKey);
+    return;
+  }
+  if (monthLockKey && Date.now() >= monthLockUntil) {
+    monthLockKey = "";
+    monthLockUntil = 0;
+  }
+
   const monthKey = getActiveMonthByScroll();
   if (!monthKey) {
     return;
@@ -895,12 +908,14 @@ async function jumpToMonth(monthKey) {
   if (targetIndex == null) {
     return;
   }
+  monthLockKey = monthKey;
+  monthLockUntil = Date.now() + MONTH_JUMP_LOCK_MS;
   setActiveMonth(monthKey);
   await ensureRenderedTo(targetIndex, { immediate: true });
   const card = galleryEl.querySelector(`.card[data-index="${targetIndex}"]`);
   if (card) {
     // Align with the same activation line used by month scroll sync.
-    const targetY = window.scrollY + card.getBoundingClientRect().top - (getMonthAnchorTop() + MONTH_ACTIVATE_OFFSET) + 2;
+    const targetY = window.scrollY + card.getBoundingClientRect().top - (getMonthAnchorTop() + MONTH_ACTIVATE_OFFSET - 14);
     window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
     requestAnimationFrame(() => {
       prioritizeMonthThumbs(monthKey);
@@ -915,6 +930,8 @@ async function jumpToMonth(monthKey) {
 function renderMonthNav() {
   monthStartIndexMap = new Map();
   activeMonthKey = "";
+  monthLockKey = "";
+  monthLockUntil = 0;
   monthNavEl.innerHTML = "";
   filteredItems.forEach((item, index) => {
     if (!monthStartIndexMap.has(item.month)) {

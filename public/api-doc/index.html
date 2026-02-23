@@ -155,11 +155,20 @@
           <strong>指定日期</strong>
           <code id="urlDay">--</code>
         </li>
+        <li class="api-item">
+          <strong>最新 N 条</strong>
+          <code id="urlLatest">--</code>
+        </li>
+        <li class="api-item">
+          <strong>时间段</strong>
+          <code id="urlRange">--</code>
+        </li>
       </ul>
       <ul class="path-list">
         <li>年份格式：<code>YYYY</code>，例如 <code>2025</code></li>
         <li>月份格式：<code>MM</code>，必须补零，例如 <code>02</code></li>
-        <li>日期格式：<code>DD</code>，必须补零，例如 <code>09</code></li>
+        <li>日期格式：<code>DD</code>，必须补零，例如 <code>01</code></li>
+        <li>时间段支持：<code>YYYYMMDD</code> 或 <code>YYYY-MM-DD</code></li>
       </ul>
     </section>
 
@@ -201,13 +210,15 @@
     (function () {
       var origin = window.location.origin;
       var endpoints = {
-        all: origin + "/Bing_zh-CN_all.json",
-        year: origin + "/api/2025/all",
-        month: origin + "/api/2025/12/all",
-        day: origin + "/api/2025/12/20",
-        imgHd: origin + "/img/2025/12/20?res=hd",
-        imgUhd: origin + "/img/2025/12/20?res=uhd",
-        imgCustom: origin + "/img/2025/12/20?w=2560&h=1440"
+        all: origin + "/api",
+        year: origin + "/api/2025",
+        month: origin + "/api/2025/12",
+        day: origin + "/api/2025/12/01",
+        latest: origin + "/api/latest/10",
+        range: origin + "/api/range/20251201/20251231",
+        imgHd: origin + "/img/2025/12/01?res=hd",
+        imgUhd: origin + "/img/2025/12/01?res=uhd",
+        imgCustom: origin + "/img/2025/12/01?w=2560&h=1440"
       };
 
       document.getElementById("originText").textContent = origin;
@@ -215,19 +226,25 @@
       document.getElementById("urlYear").textContent = endpoints.year;
       document.getElementById("urlMonth").textContent = endpoints.month;
       document.getElementById("urlDay").textContent = endpoints.day;
+      document.getElementById("urlLatest").textContent = endpoints.latest;
+      document.getElementById("urlRange").textContent = endpoints.range;
       document.getElementById("urlImgHd").textContent = endpoints.imgHd;
       document.getElementById("urlImgUhd").textContent = endpoints.imgUhd;
       document.getElementById("urlImgCustom").textContent = endpoints.imgCustom;
 
       document.getElementById("fetchExample").textContent =
-        "const jsonRes = await fetch(\"" + endpoints.day + "\");\n" +
-        "const jsonData = await jsonRes.json();\n" +
-        "console.log(jsonData.images);\n\n" +
-        "const imgUrl = \"" + endpoints.imgCustom + "\";\n" +
-        "document.querySelector(\"img\").src = imgUrl;";
+        "const latestRes = await fetch(\"" + endpoints.latest + "\");\n" +
+        "const latestData = await latestRes.json();\n" +
+        "console.log(latestData.images);\n\n" +
+        "const rangeRes = await fetch(\"" + endpoints.range + "\");\n" +
+        "const rangeData = await rangeRes.json();\n" +
+        "console.log(rangeData.images);\n\n" +
+        "document.querySelector(\"img\").src = \"" + endpoints.imgCustom + "\";";
 
       document.getElementById("curlExample").textContent =
-        "curl \"" + endpoints.month + "\"\n" +
+        "curl \"" + endpoints.day + "\"\n" +
+        "curl \"" + endpoints.latest + "\"\n" +
+        "curl \"" + endpoints.range + "\"\n" +
         "curl -L -o bing.jpg \"" + endpoints.imgUhd + "\"";
     })();
   </script>

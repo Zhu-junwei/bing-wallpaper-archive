@@ -3,7 +3,7 @@ const DATASET_CACHE_TTL_MS = 5 * 60 * 1000;
 export const UHD_CUTOFF_DATE = "20190510";
 const BING_HOST = "https://www.bing.com";
 
-const BASE_HEADERS = {
+export const BASE_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "public, max-age=300, must-revalidate",
   "access-control-allow-origin": "*",
@@ -15,7 +15,7 @@ let datasetCache = {
   images: null,
 };
 
-function jsonResponse(payload, status = 200) {
+export function jsonResponse(payload, status = 200) {
   return new Response(`${JSON.stringify(payload, null, 2)}\n`, {
     status,
     headers: BASE_HEADERS,

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bing Wallpaper API</title>
+  <meta name="description" content="Bing Wallpaper Archive API 调用说明">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    :root {
+      --bg-0: #edf4ff;
+      --bg-1: #dce9ff;
+      --ink: #062540;
+      --panel: rgba(255, 255, 255, 0.82);
+      --border: rgba(4, 45, 76, 0.2);
+      --link: #0f5b8a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Chakra Petch", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 8% 12%, rgba(0, 213, 255, 0.2), transparent 40%),
+        radial-gradient(circle at 90% 15%, rgba(255, 138, 61, 0.2), transparent 42%),
+        linear-gradient(145deg, var(--bg-0), var(--bg-1));
+      padding: 20px 12px 40px;
+    }
+
+    .wrap {
+      width: min(960px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    h1,
+    h2 {
+      margin: 0 0 10px;
+    }
+
+    h1 {
+      font-size: clamp(24px, 3.4vw, 36px);
+      line-height: 1.16;
+    }
+
+    h2 {
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    .hint {
+      color: #275778;
+      font-size: 14px;
+    }
+
+    .path-list {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .api-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .api-item {
+      border: 1px solid rgba(9, 63, 98, 0.18);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .api-item strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      color: #073453;
+      word-break: break-all;
+    }
+
+    pre {
+      margin: 10px 0 0;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(6, 46, 74, 0.9);
+      color: #e7f8ff;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    a {
+      color: var(--link);
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="panel">
+      <h1>Bing Wallpaper API</h1>
+      <p class="hint">
+        当前访问基址：<code id="originText">--</code>
+      </p>
+      <p class="hint" style="margin-top:8px;">
+        访问方式自动跟随你当前入口（域名或 IP），所以示例 URL 会动态生成。
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>接口地址</h2>
+      <ul class="api-list">
+        <li class="api-item">
+          <strong>全量数据</strong>
+          <code id="urlAll">--</code>
+        </li>
+        <li class="api-item">
+          <strong>指定年份</strong>
+          <code id="urlYear">--</code>
+        </li>
+        <li class="api-item">
+          <strong>指定月份</strong>
+          <code id="urlMonth">--</code>
+        </li>
+        <li class="api-item">
+          <strong>指定日期</strong>
+          <code id="urlDay">--</code>
+        </li>
+      </ul>
+      <ul class="path-list">
+        <li>年份格式：<code>YYYY</code>，例如 <code>2025</code></li>
+        <li>月份格式：<code>MM</code>，必须补零，例如 <code>02</code></li>
+        <li>日期格式：<code>DD</code>，必须补零，例如 <code>09</code></li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>调用示例</h2>
+      <pre id="fetchExample">--</pre>
+      <pre id="curlExample">--</pre>
+    </section>
+
+    <section class="panel">
+      <a href="/">返回首页</a>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var origin = window.location.origin;
+      var endpoints = {
+        all: origin + "/Bing_zh-CN_all.json",
+        year: origin + "/2025/all.json",
+        month: origin + "/2025/12/all.json",
+        day: origin + "/2025/12/20.json"
+      };
+
+      document.getElementById("originText").textContent = origin;
+      document.getElementById("urlAll").textContent = endpoints.all;
+      document.getElementById("urlYear").textContent = endpoints.year;
+      document.getElementById("urlMonth").textContent = endpoints.month;
+      document.getElementById("urlDay").textContent = endpoints.day;
+
+      document.getElementById("fetchExample").textContent =
+        "const res = await fetch(\"" + endpoints.day + "\");\n" +
+        "const data = await res.json();\n" +
+        "console.log(data.images);";
+
+      document.getElementById("curlExample").textContent =
+        "curl \"" + endpoints.month + "\"";
+    })();
+  </script>
+</body>
+</html>

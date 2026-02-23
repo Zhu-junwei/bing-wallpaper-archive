@@ -65,6 +65,12 @@ body {
   align-items: center;
 }
 
+.top-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .brand-kicker {
   font-family: "Orbitron", sans-serif;
   font-weight: 500;
@@ -73,30 +79,42 @@ body {
   color: #2c628f;
 }
 
+.api-link {
+  text-decoration: none;
+  border: 1px solid rgba(1, 53, 92, 0.25);
+  border-radius: 999px;
+  padding: 5px 11px;
+  color: #0a4469;
+  font-size: 12px;
+  font-family: "Orbitron", sans-serif;
+  letter-spacing: 0.06em;
+  transition: border-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+
+.api-link:hover {
+  border-color: rgba(1, 53, 92, 0.56);
+  color: #0d5b8a;
+  transform: translateY(-1px);
+}
+
 .top-link {
-  width: 34px;
-  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
   color: var(--ink-0);
-  border: 1px solid rgba(1, 53, 92, 0.25);
-  border-radius: 999px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(229, 244, 255, 0.95));
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .top-link svg {
-  width: 17px;
-  height: 17px;
+  width: 20px;
+  height: 20px;
   fill: currentcolor;
 }
 
 .top-link:hover {
-  border-color: rgba(1, 53, 92, 0.6);
+  color: #0d5b8a;
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(5, 41, 72, 0.18);
 }
 
 .layout {

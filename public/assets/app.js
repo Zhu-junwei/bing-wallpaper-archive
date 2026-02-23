@@ -21,6 +21,7 @@ const randomBtn = document.getElementById("randomBtn");
 const backToTopBtn = document.getElementById("backToTopBtn");
 const topbarEl = document.querySelector(".topbar");
 const stickyFiltersEl = document.querySelector(".sticky-filters");
+const monthPanelEl = document.querySelector(".month-panel");
 
 const heroImage = document.getElementById("heroImage");
 const heroDate = document.getElementById("heroDate");
@@ -73,6 +74,7 @@ let activeMonthKey = "";
 let monthSyncRaf = 0;
 let autoLoadCheckRaf = 0;
 let chunkRenderInProgress = false;
+const AUTO_LOAD_TRIGGER_DISTANCE = 640;
 
 function formatDate(enddate) {
   if (!/^\d{8}$/.test(enddate || "")) {
@@ -318,38 +320,20 @@ function getMonthAnchorTop() {
 }
 
 function getActiveMonthByScroll() {
-  const monthEntries = [...monthStartIndexMap.entries()];
-  if (!monthEntries.length) {
-    return "";
-  }
-
-  const anchorTop = getMonthAnchorTop();
-  let candidate = "";
-
-  for (const [monthKey, startIndex] of monthEntries) {
-    const card = galleryEl.querySelector(`.card[data-index="${startIndex}"]`);
-    if (!card) {
-      break;
-    }
-    const rect = card.getBoundingClientRect();
-    if (rect.top <= anchorTop) {
-      candidate = monthKey;
-      continue;
-    }
-    if (!candidate) {
-      candidate = monthKey;
-    }
-    break;
-  }
-
-  if (candidate) {
-    return candidate;
-  }
-
   const cards = galleryEl.querySelectorAll(".card[data-month]");
   if (!cards.length) {
     return "";
   }
+
+  const anchorTop = getMonthAnchorTop();
+  for (const card of cards) {
+    const rect = card.getBoundingClientRect();
+    // Pick the first card that intersects or appears below the sticky anchor line.
+    if (rect.bottom >= anchorTop) {
+      return card.dataset.month || "";
+    }
+  }
+
   const lastCard = cards[cards.length - 1];
   return lastCard.dataset.month || "";
 }
@@ -377,7 +361,12 @@ function maybeAutoLoadMore() {
     return;
   }
   const rect = loadMoreBtn.getBoundingClientRect();
-  if (rect.top <= window.innerHeight + 260) {
+  const nearLoadMoreButton = rect.top <= window.innerHeight + 260;
+  const scrollBottom = window.scrollY + window.innerHeight;
+  const docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  const nearPageBottom = scrollBottom >= docHeight - AUTO_LOAD_TRIGGER_DISTANCE;
+
+  if (nearLoadMoreButton || nearPageBottom) {
     renderChunk(false);
   }
 }
@@ -876,8 +865,22 @@ function setActiveMonth(monthKey) {
   }
   activeMonthKey = normalizedMonthKey;
   const buttons = monthNavEl.querySelectorAll(".month-btn");
+  let activeButton = null;
   for (const button of buttons) {
-    button.classList.toggle("active", button.dataset.month === normalizedMonthKey);
+    const isActive = button.dataset.month === normalizedMonthKey;
+    button.classList.toggle("active", isActive);
+    if (isActive) {
+      activeButton = button;
+    }
+  }
+
+  // Keep the active month visible in the left month panel while scrolling.
+  if (activeButton && monthPanelEl) {
+    const panelRect = monthPanelEl.getBoundingClientRect();
+    const activeRect = activeButton.getBoundingClientRect();
+    if (activeRect.top < panelRect.top || activeRect.bottom > panelRect.bottom) {
+      activeButton.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+    }
   }
 }
 

@@ -265,6 +265,9 @@ function hydrateCardImage(img) {
   }
   img.src = img.dataset.src;
   img.removeAttribute("data-src");
+  if (img.complete && img.naturalWidth > 0) {
+    markCardImageReady(img);
+  }
   if (thumbObserver) {
     thumbObserver.unobserve(img);
   }
@@ -505,6 +508,17 @@ function setViewerLowImage(src, item) {
   }
   viewerLowImageEl.src = src;
   viewerLowImageEl.alt = `${item.title} ${item.dateLabel}`;
+}
+
+function markCardImageReady(img) {
+  if (!img) {
+    return;
+  }
+  img.classList.add("ready");
+  const wrap = img.closest(".card-image-wrap");
+  if (wrap) {
+    wrap.classList.remove("loading");
+  }
 }
 
 function updateViewerMeta(item) {
@@ -774,6 +788,7 @@ function cardFromItem(item, index, options = {}) {
   const animate = options.animate !== false;
   const fragment = templateEl.content.cloneNode(true);
   const card = fragment.querySelector(".card");
+  const imageWrap = fragment.querySelector(".card-image-wrap");
   const img = fragment.querySelector("img");
   const date = fragment.querySelector(".card-date");
   const title = fragment.querySelector(".card-title");
@@ -791,9 +806,25 @@ function cardFromItem(item, index, options = {}) {
     card.style.opacity = "1";
     card.style.transform = "translateY(0)";
   }
+  if (imageWrap) {
+    imageWrap.classList.add("loading");
+  }
   img.src = THUMB_PLACEHOLDER;
   img.dataset.src = item.thumbUrl;
+  img.classList.remove("ready");
   img.alt = `${item.title} ${item.dateLabel}`;
+  img.addEventListener("load", () => {
+    if (!img.dataset.src && img.currentSrc && !img.currentSrc.startsWith("data:image/gif")) {
+      markCardImageReady(img);
+    }
+  });
+  img.addEventListener("error", () => {
+    const wrap = img.closest(".card-image-wrap");
+    if (wrap) {
+      wrap.classList.remove("loading");
+      wrap.classList.add("error");
+    }
+  });
   observeCardImage(img);
   img.addEventListener("click", () => openViewerAtIndex(index, img));
   date.textContent = item.dateLabel;

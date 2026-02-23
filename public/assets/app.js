@@ -770,7 +770,8 @@ function renderHero(item) {
   heroLink.href = item.copyrightlink || "https://www.bing.com";
 }
 
-function cardFromItem(item, index) {
+function cardFromItem(item, index, options = {}) {
+  const animate = options.animate !== false;
   const fragment = templateEl.content.cloneNode(true);
   const card = fragment.querySelector(".card");
   const img = fragment.querySelector("img");
@@ -783,7 +784,13 @@ function cardFromItem(item, index) {
 
   card.dataset.index = String(index);
   card.dataset.month = item.month;
-  card.style.setProperty("--index", String(index));
+  if (animate) {
+    card.style.setProperty("--index", String(index));
+  } else {
+    card.style.animation = "none";
+    card.style.opacity = "1";
+    card.style.transform = "translateY(0)";
+  }
   img.src = THUMB_PLACEHOLDER;
   img.dataset.src = item.thumbUrl;
   img.alt = `${item.title} ${item.dateLabel}`;
@@ -804,13 +811,13 @@ function updateStats() {
   latestDateEl.textContent = `最近更新: ${allItems[0] ? allItems[0].dateLabel : "--"}`;
 }
 
-function appendRange(start, end) {
+function appendRange(start, end, options = {}) {
   if (start >= end) {
     return;
   }
   const fragment = document.createDocumentFragment();
   for (let i = start; i < end; i += 1) {
-    fragment.appendChild(cardFromItem(filteredItems[i], i));
+    fragment.appendChild(cardFromItem(filteredItems[i], i, options));
   }
   galleryEl.appendChild(fragment);
   scheduleMonthSync();
@@ -842,7 +849,7 @@ function renderChunk(reset = false) {
     return;
   }
   const nextEnd = Math.min(filteredItems.length, renderedCount + PAGE_SIZE);
-  appendRange(renderedCount, nextEnd);
+  appendRange(renderedCount, nextEnd, { animate: true });
   renderedCount = nextEnd;
   refreshLoadMoreVisibility();
   chunkRenderInProgress = false;
@@ -856,7 +863,7 @@ function ensureRenderedTo(targetIndex, options = {}) {
   }
   const targetEnd = Math.min(filteredItems.length, targetIndex + 1);
   if (immediate) {
-    appendRange(renderedCount, targetEnd);
+    appendRange(renderedCount, targetEnd, { animate: !options.disableAnimation });
     renderedCount = targetEnd;
     refreshLoadMoreVisibility();
     return Promise.resolve();
@@ -864,7 +871,7 @@ function ensureRenderedTo(targetIndex, options = {}) {
   return new Promise((resolve) => {
     const run = () => {
       const next = Math.min(targetEnd, renderedCount + MONTH_JUMP_BATCH);
-      appendRange(renderedCount, next);
+      appendRange(renderedCount, next, { animate: !options.disableAnimation });
       renderedCount = next;
       refreshLoadMoreVisibility();
       if (renderedCount >= targetEnd) {
@@ -911,7 +918,7 @@ async function jumpToMonth(monthKey) {
   monthLockKey = monthKey;
   monthLockUntil = Date.now() + MONTH_JUMP_LOCK_MS;
   setActiveMonth(monthKey);
-  await ensureRenderedTo(targetIndex, { immediate: true });
+  await ensureRenderedTo(targetIndex, { immediate: true, disableAnimation: true });
   const card = galleryEl.querySelector(`.card[data-index="${targetIndex}"]`);
   if (card) {
     // Align with the same activation line used by month scroll sync.

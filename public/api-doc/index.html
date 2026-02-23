@@ -187,6 +187,10 @@
           <strong>自定义分辨率</strong>
           <code id="urlImgCustom">--</code>
         </li>
+        <li class="api-item">
+          <strong>最新一张图片</strong>
+          <code id="urlImgLatest">--</code>
+        </li>
       </ul>
       <ul class="path-list">
         <li><code>res</code> 支持：<code>hd</code>、<code>uhd</code></li>
@@ -218,7 +222,8 @@
         range: origin + "/api/range/20251201/20251231",
         imgHd: origin + "/img/2025/12/01?res=hd",
         imgUhd: origin + "/img/2025/12/01?res=uhd",
-        imgCustom: origin + "/img/2025/12/01?w=2560&h=1440"
+        imgCustom: origin + "/img/2025/12/01?w=2560&h=1440",
+        imgLatest: origin + "/img/latest"
       };
 
       document.getElementById("originText").textContent = origin;
@@ -231,6 +236,7 @@
       document.getElementById("urlImgHd").textContent = endpoints.imgHd;
       document.getElementById("urlImgUhd").textContent = endpoints.imgUhd;
       document.getElementById("urlImgCustom").textContent = endpoints.imgCustom;
+      document.getElementById("urlImgLatest").textContent = endpoints.imgLatest;
 
       document.getElementById("fetchExample").textContent =
         "const latestRes = await fetch(\"" + endpoints.latest + "\");\n" +
@@ -245,7 +251,8 @@
         "curl \"" + endpoints.day + "\"\n" +
         "curl \"" + endpoints.latest + "\"\n" +
         "curl \"" + endpoints.range + "\"\n" +
-        "curl -L -o bing.jpg \"" + endpoints.imgUhd + "\"";
+        "curl -L -o bing.jpg \"" + endpoints.imgUhd + "\"\n" +
+        "curl -L -o bing-latest.jpg \"" + endpoints.imgLatest + "\"";
     })();
   </script>
 </body>

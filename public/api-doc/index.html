@@ -140,24 +140,28 @@
       <h2>JSON 接口</h2>
       <ul class="api-list">
         <li class="api-item">
-          <strong>全量数据</strong>
-          <code id="urlAll">--</code>
-        </li>
-        <li class="api-item">
-          <strong>指定年份</strong>
-          <code id="urlYear">--</code>
+          <strong>指定日期</strong>
+          <code id="urlDay">--</code>
         </li>
         <li class="api-item">
           <strong>指定月份</strong>
           <code id="urlMonth">--</code>
         </li>
         <li class="api-item">
-          <strong>指定日期</strong>
-          <code id="urlDay">--</code>
+          <strong>指定年份</strong>
+          <code id="urlYear">--</code>
+        </li>
+        <li class="api-item">
+          <strong>最新一条</strong>
+          <code id="urlLatestOne">--</code>
         </li>
         <li class="api-item">
           <strong>最新 N 条</strong>
           <code id="urlLatest">--</code>
+        </li>
+        <li class="api-item">
+          <strong>全量数据</strong>
+          <code id="urlAll">--</code>
         </li>
         <li class="api-item">
           <strong>时间段</strong>
@@ -218,6 +222,7 @@
         year: origin + "/api/2025",
         month: origin + "/api/2025/12",
         day: origin + "/api/2025/12/01",
+        latestOne: origin + "/api/latest",
         latest: origin + "/api/latest/10",
         range: origin + "/api/range/20251201/20251231",
         imgHd: origin + "/img/2025/12/01?res=hd",
@@ -231,6 +236,7 @@
       document.getElementById("urlYear").textContent = endpoints.year;
       document.getElementById("urlMonth").textContent = endpoints.month;
       document.getElementById("urlDay").textContent = endpoints.day;
+      document.getElementById("urlLatestOne").textContent = endpoints.latestOne;
       document.getElementById("urlLatest").textContent = endpoints.latest;
       document.getElementById("urlRange").textContent = endpoints.range;
       document.getElementById("urlImgHd").textContent = endpoints.imgHd;
@@ -239,6 +245,9 @@
       document.getElementById("urlImgLatest").textContent = endpoints.imgLatest;
 
       document.getElementById("fetchExample").textContent =
+        "const latestOneRes = await fetch(\"" + endpoints.latestOne + "\");\n" +
+        "const latestOneData = await latestOneRes.json();\n" +
+        "console.log(latestOneData.images[0]);\n\n" +
         "const latestRes = await fetch(\"" + endpoints.latest + "\");\n" +
         "const latestData = await latestRes.json();\n" +
         "console.log(latestData.images);\n\n" +
@@ -249,6 +258,7 @@
 
       document.getElementById("curlExample").textContent =
         "curl \"" + endpoints.day + "\"\n" +
+        "curl \"" + endpoints.latestOne + "\"\n" +
         "curl \"" + endpoints.latest + "\"\n" +
         "curl \"" + endpoints.range + "\"\n" +
         "curl -L -o bing.jpg \"" + endpoints.imgUhd + "\"\n" +

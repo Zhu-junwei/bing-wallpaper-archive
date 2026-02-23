@@ -326,9 +326,36 @@ function getActiveMonthByScroll() {
   }
 
   const anchorTop = getMonthAnchorTop();
+  let fallbackMonth = "";
   for (const card of cards) {
     const rect = card.getBoundingClientRect();
-    // Pick the first card that intersects or appears below the sticky anchor line.
+    const cardMonth = card.dataset.month || "";
+    if (!cardMonth) {
+      continue;
+    }
+
+    if (rect.bottom < anchorTop - 1) {
+      fallbackMonth = cardMonth;
+      continue;
+    }
+
+    // Prefer the first card whose top is at/under the anchor line.
+    if (rect.top >= anchorTop - 2) {
+      return cardMonth;
+    }
+
+    // Fallback for tall cards crossing the anchor line.
+    if (!fallbackMonth) {
+      fallbackMonth = cardMonth;
+    }
+  }
+
+  if (fallbackMonth) {
+    return fallbackMonth;
+  }
+
+  for (const card of cards) {
+    const rect = card.getBoundingClientRect();
     if (rect.bottom >= anchorTop) {
       return card.dataset.month || "";
     }
@@ -893,7 +920,9 @@ async function jumpToMonth(monthKey) {
   await ensureRenderedTo(targetIndex, { immediate: true });
   const card = galleryEl.querySelector(`.card[data-index="${targetIndex}"]`);
   if (card) {
-    card.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Align target month card with the same sticky anchor used by month sync.
+    const targetY = window.scrollY + card.getBoundingClientRect().top - getMonthAnchorTop() - 2;
+    window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
     requestAnimationFrame(() => {
       prioritizeMonthThumbs(monthKey);
     });

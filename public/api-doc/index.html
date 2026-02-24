@@ -160,6 +160,22 @@
           <code id="urlLatest">--</code>
         </li>
         <li class="api-item">
+          <strong>Random One</strong>
+          <code id="urlRandomOne">--</code>
+        </li>
+        <li class="api-item">
+          <strong>Random N</strong>
+          <code id="urlRandom">--</code>
+        </li>
+        <li class="api-item">
+          <strong>Latest JSON + IMG</strong>
+          <code id="urlLatestPair">--</code>
+        </li>
+        <li class="api-item">
+          <strong>Random JSON + IMG</strong>
+          <code id="urlRandomPair">--</code>
+        </li>
+        <li class="api-item">
           <strong>全量数据</strong>
           <code id="urlAll">--</code>
         </li>
@@ -195,6 +211,10 @@
           <strong>最新一张图片</strong>
           <code id="urlImgLatest">--</code>
         </li>
+        <li class="api-item">
+          <strong>Random Image</strong>
+          <code id="urlImgRandom">--</code>
+        </li>
       </ul>
       <ul class="path-list">
         <li><code>res</code> 支持：<code>hd</code>、<code>uhd</code></li>
@@ -223,12 +243,22 @@
         month: origin + "/api/2025/12",
         day: origin + "/api/2025/12/01",
         latestOne: origin + "/api/latest",
+        latestOneByOne: origin + "/api/latest/1",
         latest: origin + "/api/latest/10",
+        randomOne: origin + "/api/random",
+        randomOneByOne: origin + "/api/random/1",
+        random: origin + "/api/random/10",
         range: origin + "/api/range/20251201/20251231",
-        imgHd: origin + "/img/2025/12/01?res=hd",
+        imgHd: origin + "/img/2025/12/01",
+        imgHdWithRes: origin + "/img/2025/12/01?res=hd",
         imgUhd: origin + "/img/2025/12/01?res=uhd",
         imgCustom: origin + "/img/2025/12/01?w=2560&h=1440",
-        imgLatest: origin + "/img/latest"
+        imgLatest: origin + "/img/latest",
+        imgLatestHd: origin + "/img/latest?res=hd",
+        imgLatestUhd: origin + "/img/latest?res=uhd",
+        imgLatestCustom: origin + "/img/latest?w=2560&h=1440",
+        imgRandom: origin + "/img/random",
+        imgRandomUhd: origin + "/img/random?res=uhd"
       };
 
       document.getElementById("originText").textContent = origin;
@@ -236,13 +266,23 @@
       document.getElementById("urlYear").textContent = endpoints.year;
       document.getElementById("urlMonth").textContent = endpoints.month;
       document.getElementById("urlDay").textContent = endpoints.day;
-      document.getElementById("urlLatestOne").textContent = endpoints.latestOne;
+      document.getElementById("urlLatestOne").textContent = endpoints.latestOne + " | " + endpoints.latestOneByOne;
       document.getElementById("urlLatest").textContent = endpoints.latest;
+      document.getElementById("urlRandomOne").textContent = endpoints.randomOne + " | " + endpoints.randomOneByOne;
+      document.getElementById("urlRandom").textContent = endpoints.random;
+      document.getElementById("urlLatestPair").textContent =
+        "JSON: " + endpoints.latestOne + " | " + endpoints.latestOneByOne +
+        " ; IMG: " + endpoints.imgLatest + " | " + endpoints.imgLatestHd + " | " + endpoints.imgLatestUhd + " | " + endpoints.imgLatestCustom;
+      document.getElementById("urlRandomPair").textContent =
+        "JSON: " + endpoints.randomOne + " | " + endpoints.randomOneByOne +
+        " ; IMG: " + endpoints.imgRandom + " | " + endpoints.imgRandomUhd;
       document.getElementById("urlRange").textContent = endpoints.range;
-      document.getElementById("urlImgHd").textContent = endpoints.imgHd;
+      document.getElementById("urlImgHd").textContent = endpoints.imgHd + " | " + endpoints.imgHdWithRes;
       document.getElementById("urlImgUhd").textContent = endpoints.imgUhd;
       document.getElementById("urlImgCustom").textContent = endpoints.imgCustom;
-      document.getElementById("urlImgLatest").textContent = endpoints.imgLatest;
+      document.getElementById("urlImgLatest").textContent =
+        endpoints.imgLatest + " | " + endpoints.imgLatestHd + " | " + endpoints.imgLatestUhd + " | " + endpoints.imgLatestCustom;
+      document.getElementById("urlImgRandom").textContent = endpoints.imgRandom + " | " + endpoints.imgRandomUhd;
 
       document.getElementById("fetchExample").textContent =
         "const latestOneRes = await fetch(\"" + endpoints.latestOne + "\");\n" +

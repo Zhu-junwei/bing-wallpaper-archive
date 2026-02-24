@@ -103,6 +103,10 @@
       display: block;
       margin-bottom: 6px;
     }
+    .api-item code {
+      display: block;
+      white-space: pre-wrap;
+    }
 
     code {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
@@ -160,20 +164,12 @@
           <code id="urlLatest">--</code>
         </li>
         <li class="api-item">
-          <strong>Random One</strong>
+          <strong>随机一条(JSON)</strong>
           <code id="urlRandomOne">--</code>
         </li>
         <li class="api-item">
-          <strong>Random N</strong>
+          <strong>随机多条(JSON)</strong>
           <code id="urlRandom">--</code>
-        </li>
-        <li class="api-item">
-          <strong>Latest JSON + IMG</strong>
-          <code id="urlLatestPair">--</code>
-        </li>
-        <li class="api-item">
-          <strong>Random JSON + IMG</strong>
-          <code id="urlRandomPair">--</code>
         </li>
         <li class="api-item">
           <strong>全量数据</strong>
@@ -212,7 +208,7 @@
           <code id="urlImgLatest">--</code>
         </li>
         <li class="api-item">
-          <strong>Random Image</strong>
+          <strong>随机一张图片</strong>
           <code id="urlImgRandom">--</code>
         </li>
       </ul>
@@ -266,23 +262,17 @@
       document.getElementById("urlYear").textContent = endpoints.year;
       document.getElementById("urlMonth").textContent = endpoints.month;
       document.getElementById("urlDay").textContent = endpoints.day;
-      document.getElementById("urlLatestOne").textContent = endpoints.latestOne + " | " + endpoints.latestOneByOne;
+      document.getElementById("urlLatestOne").textContent = endpoints.latestOne + "\n" + endpoints.latestOneByOne;
       document.getElementById("urlLatest").textContent = endpoints.latest;
-      document.getElementById("urlRandomOne").textContent = endpoints.randomOne + " | " + endpoints.randomOneByOne;
+      document.getElementById("urlRandomOne").textContent = endpoints.randomOne + "\n" + endpoints.randomOneByOne;
       document.getElementById("urlRandom").textContent = endpoints.random;
-      document.getElementById("urlLatestPair").textContent =
-        "JSON: " + endpoints.latestOne + " | " + endpoints.latestOneByOne +
-        " ; IMG: " + endpoints.imgLatest + " | " + endpoints.imgLatestHd + " | " + endpoints.imgLatestUhd + " | " + endpoints.imgLatestCustom;
-      document.getElementById("urlRandomPair").textContent =
-        "JSON: " + endpoints.randomOne + " | " + endpoints.randomOneByOne +
-        " ; IMG: " + endpoints.imgRandom + " | " + endpoints.imgRandomUhd;
       document.getElementById("urlRange").textContent = endpoints.range;
-      document.getElementById("urlImgHd").textContent = endpoints.imgHd + " | " + endpoints.imgHdWithRes;
+      document.getElementById("urlImgHd").textContent = endpoints.imgHd + "\n" + endpoints.imgHdWithRes;
       document.getElementById("urlImgUhd").textContent = endpoints.imgUhd;
       document.getElementById("urlImgCustom").textContent = endpoints.imgCustom;
       document.getElementById("urlImgLatest").textContent =
-        endpoints.imgLatest + " | " + endpoints.imgLatestHd + " | " + endpoints.imgLatestUhd + " | " + endpoints.imgLatestCustom;
-      document.getElementById("urlImgRandom").textContent = endpoints.imgRandom + " | " + endpoints.imgRandomUhd;
+        endpoints.imgLatest + "\n" + endpoints.imgLatestHd + "\n" + endpoints.imgLatestUhd + "\n" + endpoints.imgLatestCustom;
+      document.getElementById("urlImgRandom").textContent = endpoints.imgRandom + "\n" + endpoints.imgRandomUhd;
 
       document.getElementById("fetchExample").textContent =
         "const latestOneRes = await fetch(\"" + endpoints.latestOne + "\");\n" +

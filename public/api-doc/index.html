@@ -254,7 +254,9 @@
         imgLatestUhd: origin + "/img/latest?res=uhd",
         imgLatestCustom: origin + "/img/latest?w=2560&h=1440",
         imgRandom: origin + "/img/random",
-        imgRandomUhd: origin + "/img/random?res=uhd"
+        imgRandomHd: origin + "/img/random?res=hd",
+        imgRandomUhd: origin + "/img/random?res=uhd",
+        imgRandomCustom: origin + "/img/random?w=2560&h=1440"
       };
 
       document.getElementById("originText").textContent = origin;
@@ -272,7 +274,8 @@
       document.getElementById("urlImgCustom").textContent = endpoints.imgCustom;
       document.getElementById("urlImgLatest").textContent =
         endpoints.imgLatest + "\n" + endpoints.imgLatestHd + "\n" + endpoints.imgLatestUhd + "\n" + endpoints.imgLatestCustom;
-      document.getElementById("urlImgRandom").textContent = endpoints.imgRandom + "\n" + endpoints.imgRandomUhd;
+      document.getElementById("urlImgRandom").textContent =
+        endpoints.imgRandom + "\n" + endpoints.imgRandomHd + "\n" + endpoints.imgRandomUhd + "\n" + endpoints.imgRandomCustom;
 
       document.getElementById("fetchExample").textContent =
         "const latestOneRes = await fetch(\"" + endpoints.latestOne + "\");\n" +

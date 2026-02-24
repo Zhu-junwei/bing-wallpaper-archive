@@ -7,6 +7,8 @@ import {
   proxyBingImage,
 } from "../_lib/img-api.js";
 
+const RANDOM_IMAGE_NO_CACHE = "no-store, no-cache, must-revalidate, max-age=0";
+
 function pickRandomImage(images) {
   const validImages = Array.isArray(images)
     ? images.filter((image) => /^\d{8}$/.test(image?.enddate || ""))
@@ -15,12 +17,24 @@ function pickRandomImage(images) {
   return image || null;
 }
 
+function withNoStoreCache(response) {
+  const headers = new Headers(response.headers);
+  headers.set("cache-control", RANDOM_IMAGE_NO_CACHE);
+  headers.set("pragma", "no-cache");
+  headers.set("expires", "0");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export async function onRequest(context) {
   if (context.request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: IMAGE_HEADERS });
+    return withNoStoreCache(new Response(null, { status: 204, headers: IMAGE_HEADERS }));
   }
   if (context.request.method !== "GET" && context.request.method !== "HEAD") {
-    return imageJsonError("Method not allowed", 405);
+    return withNoStoreCache(imageJsonError("Method not allowed", 405));
   }
 
   let randomImage = null;
@@ -28,21 +42,24 @@ export async function onRequest(context) {
     const images = await loadImages(context);
     randomImage = pickRandomImage(images);
   } catch (error) {
-    return imageJsonError(
-      `Failed to load wallpaper data: ${error instanceof Error ? error.message : String(error)}`,
-      500,
+    return withNoStoreCache(
+      imageJsonError(
+        `Failed to load wallpaper data: ${error instanceof Error ? error.message : String(error)}`,
+        500,
+      ),
     );
   }
 
   if (!randomImage || !randomImage.enddate) {
-    return imageJsonError("No wallpaper data available.", 404);
+    return withNoStoreCache(imageJsonError("No wallpaper data available.", 404));
   }
 
   const requestUrl = new URL(context.request.url);
   const target = buildBingTargetUrl(randomImage, randomImage.enddate, requestUrl);
   if (target.error) {
-    return imageJsonError(target.error, 400);
+    return withNoStoreCache(imageJsonError(target.error, 400));
   }
 
-  return proxyBingImage(context, target.url);
+  const imageResponse = await proxyBingImage(context, target.url);
+  return withNoStoreCache(imageResponse);
 }

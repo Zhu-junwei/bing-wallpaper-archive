@@ -110,6 +110,10 @@ https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/2025/12/all.json
 https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/2025/all.json
 ```
 
+**CloudFlare API：**
+
+
+
 ## ⚠️ 注意事项
 
 - 可能存在有些图片无法下载的现象，请自行测试。

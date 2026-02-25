@@ -6,6 +6,21 @@ export const IMAGE_HEADERS = {
   "access-control-allow-methods": "GET, HEAD, OPTIONS",
 };
 
+const UPSTREAM_HEADERS_TO_STRIP = [
+  "set-cookie",
+  "x-powered-by",
+  "httpcacheability",
+  "x-cache",
+  "x-msedge-ref",
+  "nel",
+  "report-to",
+  "timing-allow-origin",
+  "access-control-allow-origin",
+  "access-control-allow-methods",
+  "access-control-allow-headers",
+  "access-control-expose-headers",
+];
+
 export function imageJsonError(message, status) {
   return new Response(`${JSON.stringify({ error: message }, null, 2)}\n`, {
     status,
@@ -115,13 +130,78 @@ export async function proxyBingImage(context, targetUrl) {
   }
 
   const headers = new Headers(upstream.headers);
+  for (const name of UPSTREAM_HEADERS_TO_STRIP) {
+    headers.delete(name);
+  }
   headers.set("cache-control", IMAGE_HEADERS["cache-control"]);
   headers.set("access-control-allow-origin", IMAGE_HEADERS["access-control-allow-origin"]);
   headers.set("access-control-allow-methods", IMAGE_HEADERS["access-control-allow-methods"]);
-  headers.delete("set-cookie");
 
   return new Response(context.request.method === "HEAD" ? null : upstream.body, {
     status: upstream.status,
+    headers,
+  });
+}
+
+function normalizeEnddate(enddate) {
+  if (!/^\d{8}$/.test(enddate || "")) {
+    return null;
+  }
+  return enddate;
+}
+
+function normalizeSourceUrl(sourceUrl) {
+  if (typeof sourceUrl !== "string") {
+    return null;
+  }
+  const value = sourceUrl.trim();
+  if (!value) {
+    return null;
+  }
+  return value;
+}
+
+function mergeExposeHeaders(headers, names) {
+  const existing = (headers.get("access-control-expose-headers") || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const set = new Set(existing.map((value) => value.toLowerCase()));
+  for (const name of names) {
+    if (!set.has(name.toLowerCase())) {
+      existing.push(name);
+      set.add(name.toLowerCase());
+    }
+  }
+  headers.set("access-control-expose-headers", existing.join(", "));
+}
+
+export function withImageDateHeaders(response, enddate, sourceUrl) {
+  const normalized = normalizeEnddate(enddate);
+  const normalizedSourceUrl = normalizeSourceUrl(sourceUrl);
+  if (!normalized && !normalizedSourceUrl) {
+    return response;
+  }
+
+  const headers = new Headers(response.headers);
+  const exposeHeaders = [];
+
+  if (normalized) {
+    headers.set("x-bing-enddate", normalized);
+    exposeHeaders.push("x-bing-enddate");
+  }
+  if (normalizedSourceUrl) {
+    headers.set("x-bing-source-url", normalizedSourceUrl);
+    exposeHeaders.push("x-bing-source-url");
+  }
+
+  if (exposeHeaders.length > 0) {
+    mergeExposeHeaders(headers, exposeHeaders);
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
     headers,
   });
 }

@@ -1,27 +1,48 @@
-import { loadImages } from "../_lib/bing-api.js";
+import { loadImages, UHD_CUTOFF_DATE } from "../_lib/bing-api.js";
 import { pickRandomItems } from "../_lib/random-utils.js";
 import {
   buildBingTargetUrl,
   IMAGE_HEADERS,
   imageJsonError,
   proxyBingImage,
+  withImageDateHeaders,
 } from "../_lib/img-api.js";
 
-const RANDOM_IMAGE_NO_CACHE = "no-store, no-cache, must-revalidate, max-age=0";
+const RANDOM_IMAGE_CACHE_CONTROL =
+  "public, max-age=180, s-maxage=300, stale-while-revalidate=600";
 
-function pickRandomImage(images) {
+function shouldLimitLegacyImages(requestUrl) {
+  const searchParams = requestUrl.searchParams;
+  const requestedRes = (searchParams.get("res") || "hd").trim().toLowerCase();
+  const requestedWidth = (searchParams.get("w") || "").trim();
+  const requestedHeight = (searchParams.get("h") || "").trim();
+  const wantsUhd = requestedRes === "uhd" || requestedRes === "4k";
+  const hasCustomSizeRequest = Boolean(requestedWidth || requestedHeight);
+  return wantsUhd || hasCustomSizeRequest;
+}
+
+function pickRandomImage(images, limitLegacyImages) {
   const validImages = Array.isArray(images)
-    ? images.filter((image) => /^\d{8}$/.test(image?.enddate || ""))
+    ? images.filter((image) => {
+        const enddate = image?.enddate || "";
+        if (!/^\d{8}$/.test(enddate)) {
+          return false;
+        }
+        if (limitLegacyImages && enddate < UHD_CUTOFF_DATE) {
+          return false;
+        }
+        return true;
+      })
     : [];
   const [image] = pickRandomItems(validImages, 1);
   return image || null;
 }
 
-function withNoStoreCache(response) {
+function withShortCache(response) {
   const headers = new Headers(response.headers);
-  headers.set("cache-control", RANDOM_IMAGE_NO_CACHE);
-  headers.set("pragma", "no-cache");
-  headers.set("expires", "0");
+  headers.set("cache-control", RANDOM_IMAGE_CACHE_CONTROL);
+  headers.delete("pragma");
+  headers.delete("expires");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -30,19 +51,21 @@ function withNoStoreCache(response) {
 }
 
 export async function onRequest(context) {
+  const requestUrl = new URL(context.request.url);
+  const limitLegacyImages = shouldLimitLegacyImages(requestUrl);
   if (context.request.method === "OPTIONS") {
-    return withNoStoreCache(new Response(null, { status: 204, headers: IMAGE_HEADERS }));
+    return withShortCache(new Response(null, { status: 204, headers: IMAGE_HEADERS }));
   }
   if (context.request.method !== "GET" && context.request.method !== "HEAD") {
-    return withNoStoreCache(imageJsonError("Method not allowed", 405));
+    return withShortCache(imageJsonError("Method not allowed", 405));
   }
 
   let randomImage = null;
   try {
     const images = await loadImages(context);
-    randomImage = pickRandomImage(images);
+    randomImage = pickRandomImage(images, limitLegacyImages);
   } catch (error) {
-    return withNoStoreCache(
+    return withShortCache(
       imageJsonError(
         `Failed to load wallpaper data: ${error instanceof Error ? error.message : String(error)}`,
         500,
@@ -51,15 +74,17 @@ export async function onRequest(context) {
   }
 
   if (!randomImage || !randomImage.enddate) {
-    return withNoStoreCache(imageJsonError("No wallpaper data available.", 404));
+    return withShortCache(imageJsonError("No wallpaper data available.", 404));
+  }
+  if (limitLegacyImages && randomImage.enddate < UHD_CUTOFF_DATE) {
+    return withShortCache(imageJsonError("No wallpaper data available for requested resolution.", 404));
   }
 
-  const requestUrl = new URL(context.request.url);
   const target = buildBingTargetUrl(randomImage, randomImage.enddate, requestUrl);
   if (target.error) {
-    return withNoStoreCache(imageJsonError(target.error, 400));
+    return withShortCache(imageJsonError(target.error, 400));
   }
 
   const imageResponse = await proxyBingImage(context, target.url);
-  return withNoStoreCache(imageResponse);
+  return withShortCache(withImageDateHeaders(imageResponse, randomImage.enddate, target.url));
 }

@@ -78,6 +78,30 @@
 - GitHub Actions 工作流 `update-bing.yml` 每日北京时间 `00:00` 自动更新数据。
 - 工作流会同步 `Bing_zh-CN_all.json` 到 `public/Bing_zh-CN_all.json`，用于 Cloudflare Pages Functions 读取。
 
+## 🧪 本地预览（Cloudflare Pages）
+
+可在本地直接预览接近 Cloudflare Pages 线上环境的效果（含 `functions/` 路由）。
+
+### 1. 环境要求
+
+- Node.js 18+（已安装 npm）
+
+### 2. 启动本地服务
+
+在仓库根目录执行：
+
+```bash
+npx wrangler pages dev public --port 8788
+```
+
+### 3. 本地访问地址
+
+- 首页：`http://127.0.0.1:8788/`
+- API 文档：`http://127.0.0.1:8788/api-doc/`
+- 示例接口：`http://127.0.0.1:8788/api/latest/1`
+
+停止服务：`Ctrl + C`
+
 ## 📥 数据获取
 
 **GitHub：**
@@ -112,6 +136,9 @@ https://cdn.jsdelivr.net/gh/Zhu-junwei/bing-wallpaper-archive/2025/all.json
 
 **CloudFlare API：**
 
+```
+https://<你的域名>/api-doc/
+```
 
 
 ## ⚠️ 注意事项

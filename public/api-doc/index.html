@@ -108,6 +108,24 @@
       white-space: pre-wrap;
     }
 
+    .endpoint-row {
+      display: block;
+      margin: 2px 0;
+    }
+
+    .endpoint-url {
+      display: inline-block;
+      word-break: break-all;
+      text-decoration: none;
+      color: var(--link);
+      transition: color 0.15s ease;
+    }
+
+    .endpoint-url:hover {
+      color: #0b79bb;
+      text-decoration: none;
+    }
+
     code {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-size: 13px;
@@ -164,11 +182,11 @@
           <code id="urlLatest">--</code>
         </li>
         <li class="api-item">
-          <strong>随机一条(JSON)</strong>
+          <strong>随机一条</strong>
           <code id="urlRandomOne">--</code>
         </li>
         <li class="api-item">
-          <strong>随机多条(JSON)</strong>
+          <strong>随机多条</strong>
           <code id="urlRandom">--</code>
         </li>
         <li class="api-item">
@@ -215,7 +233,7 @@
       <ul class="path-list">
         <li><code>res</code> 支持：<code>hd</code>、<code>uhd</code></li>
         <li>自定义分辨率使用：<code>w</code> + <code>h</code>，例如 <code>?w=2560&h=1440</code></li>
-        <li><code>2019-05-10</code>（含）之前的图片仅返回 1080P，忽略 <code>res/w/h</code></li>
+        <li><code>2019-05-10</code> 之前的图片仅返回 1080P，忽略 <code>res/w/h</code></li>
       </ul>
     </section>
 
@@ -225,30 +243,84 @@
       <pre id="curlExample">--</pre>
     </section>
 
-    <section class="panel">
-      <a href="/">返回首页</a>
-    </section>
   </main>
 
   <script>
-    (function () {
+    (async function () {
+      function parseDateParts(enddate) {
+        if (!/^\d{8}$/.test(enddate || "")) {
+          return null;
+        }
+        var year = enddate.slice(0, 4);
+        var month = enddate.slice(4, 6);
+        var day = enddate.slice(6, 8);
+        return {
+          year: year,
+          month: month,
+          day: day,
+          yyyymmdd: enddate,
+          yyyymm01: year + month + "01"
+        };
+      }
+
+      async function resolveLatestDateParts(origin) {
+        try {
+          var response = await fetch(origin + "/api/latest", { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error("Failed to load /api/latest");
+          }
+          var payload = await response.json();
+          var latestEnddate = payload && payload.images && payload.images[0] ? payload.images[0].enddate : "";
+          var parsed = parseDateParts(latestEnddate);
+          if (parsed) {
+            return parsed;
+          }
+        } catch (error) {
+          // ignore and fallback
+        }
+        return parseDateParts("20251201");
+      }
+
+      function renderEndpointLinks(elementId, urls) {
+        var container = document.getElementById(elementId);
+        container.textContent = "";
+        urls.forEach(function (url) {
+          var row = document.createElement("span");
+          row.className = "endpoint-row";
+
+          var link = document.createElement("a");
+          link.className = "endpoint-url";
+          link.href = url;
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.textContent = url;
+          link.setAttribute("aria-label", "open request: " + url);
+          link.title = "Open in new tab";
+
+          row.appendChild(link);
+          container.appendChild(row);
+        });
+      }
+
       var origin = window.location.origin;
+      var latest = await resolveLatestDateParts(origin);
+      var datePath = latest.year + "/" + latest.month + "/" + latest.day;
       var endpoints = {
         all: origin + "/api",
-        year: origin + "/api/2025",
-        month: origin + "/api/2025/12",
-        day: origin + "/api/2025/12/01",
+        year: origin + "/api/" + latest.year,
+        month: origin + "/api/" + latest.year + "/" + latest.month,
+        day: origin + "/api/" + datePath,
         latestOne: origin + "/api/latest",
         latestOneByOne: origin + "/api/latest/1",
         latest: origin + "/api/latest/10",
         randomOne: origin + "/api/random",
         randomOneByOne: origin + "/api/random/1",
         random: origin + "/api/random/10",
-        range: origin + "/api/range/20251201/20251231",
-        imgHd: origin + "/img/2025/12/01",
-        imgHdWithRes: origin + "/img/2025/12/01?res=hd",
-        imgUhd: origin + "/img/2025/12/01?res=uhd",
-        imgCustom: origin + "/img/2025/12/01?w=2560&h=1440",
+        range: origin + "/api/range/" + latest.yyyymm01 + "/" + latest.yyyymmdd,
+        imgHd: origin + "/img/" + datePath,
+        imgHdWithRes: origin + "/img/" + datePath + "?res=hd",
+        imgUhd: origin + "/img/" + datePath + "?res=uhd",
+        imgCustom: origin + "/img/" + datePath + "?w=2560&h=1440",
         imgLatest: origin + "/img/latest",
         imgLatestHd: origin + "/img/latest?res=hd",
         imgLatestUhd: origin + "/img/latest?res=uhd",
@@ -260,22 +332,30 @@
       };
 
       document.getElementById("originText").textContent = origin;
-      document.getElementById("urlAll").textContent = endpoints.all;
-      document.getElementById("urlYear").textContent = endpoints.year;
-      document.getElementById("urlMonth").textContent = endpoints.month;
-      document.getElementById("urlDay").textContent = endpoints.day;
-      document.getElementById("urlLatestOne").textContent = endpoints.latestOne + "\n" + endpoints.latestOneByOne;
-      document.getElementById("urlLatest").textContent = endpoints.latest;
-      document.getElementById("urlRandomOne").textContent = endpoints.randomOne + "\n" + endpoints.randomOneByOne;
-      document.getElementById("urlRandom").textContent = endpoints.random;
-      document.getElementById("urlRange").textContent = endpoints.range;
-      document.getElementById("urlImgHd").textContent = endpoints.imgHd + "\n" + endpoints.imgHdWithRes;
-      document.getElementById("urlImgUhd").textContent = endpoints.imgUhd;
-      document.getElementById("urlImgCustom").textContent = endpoints.imgCustom;
-      document.getElementById("urlImgLatest").textContent =
-        endpoints.imgLatest + "\n" + endpoints.imgLatestHd + "\n" + endpoints.imgLatestUhd + "\n" + endpoints.imgLatestCustom;
-      document.getElementById("urlImgRandom").textContent =
-        endpoints.imgRandom + "\n" + endpoints.imgRandomHd + "\n" + endpoints.imgRandomUhd + "\n" + endpoints.imgRandomCustom;
+      renderEndpointLinks("urlAll", [endpoints.all]);
+      renderEndpointLinks("urlYear", [endpoints.year]);
+      renderEndpointLinks("urlMonth", [endpoints.month]);
+      renderEndpointLinks("urlDay", [endpoints.day]);
+      renderEndpointLinks("urlLatestOne", [endpoints.latestOne, endpoints.latestOneByOne]);
+      renderEndpointLinks("urlLatest", [endpoints.latest]);
+      renderEndpointLinks("urlRandomOne", [endpoints.randomOne, endpoints.randomOneByOne]);
+      renderEndpointLinks("urlRandom", [endpoints.random]);
+      renderEndpointLinks("urlRange", [endpoints.range]);
+      renderEndpointLinks("urlImgHd", [endpoints.imgHd, endpoints.imgHdWithRes]);
+      renderEndpointLinks("urlImgUhd", [endpoints.imgUhd]);
+      renderEndpointLinks("urlImgCustom", [endpoints.imgCustom]);
+      renderEndpointLinks("urlImgLatest", [
+        endpoints.imgLatest,
+        endpoints.imgLatestHd,
+        endpoints.imgLatestUhd,
+        endpoints.imgLatestCustom
+      ]);
+      renderEndpointLinks("urlImgRandom", [
+        endpoints.imgRandom,
+        endpoints.imgRandomHd,
+        endpoints.imgRandomUhd,
+        endpoints.imgRandomCustom
+      ]);
 
       document.getElementById("fetchExample").textContent =
         "const latestOneRes = await fetch(\"" + endpoints.latestOne + "\");\n" +

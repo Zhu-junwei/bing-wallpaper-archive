@@ -9,6 +9,7 @@ import {
   IMAGE_HEADERS,
   imageJsonError,
   proxyBingImage,
+  withImageDateHeaders,
 } from "../../../_lib/img-api.js";
 
 export async function onRequest(context) {
@@ -52,5 +53,6 @@ export async function onRequest(context) {
     return imageJsonError(target.error, 400);
   }
 
-  return proxyBingImage(context, target.url);
+  const imageResponse = await proxyBingImage(context, target.url);
+  return withImageDateHeaders(imageResponse, enddate, target.url);
 }

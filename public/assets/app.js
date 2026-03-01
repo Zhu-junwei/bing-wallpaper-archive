@@ -47,12 +47,15 @@ const viewerNextBtn = document.getElementById("viewerNextBtn");
 const viewerMetaDateEl = document.getElementById("viewerMetaDate");
 const viewerMetaTitleEl = document.getElementById("viewerMetaTitle");
 const viewerMetaCopyrightEl = document.getElementById("viewerMetaCopyright");
+const viewerToolbarEl = document.querySelector(".viewer-toolbar");
+const viewerMetaPanelEl = document.querySelector(".viewer-meta");
 
 let allItems = [];
 let filteredItems = [];
 let renderedCount = 0;
 let monthStartIndexMap = new Map();
 let searchTimer = null;
+let searchComposing = false;
 let heroItem = null;
 
 let viewerIndex = -1;
@@ -191,19 +194,45 @@ function getViewerRatio() {
   return 16 / 9;
 }
 
+function isCompactViewport() {
+  return typeof window !== "undefined" && window.innerWidth <= 768;
+}
+
+function getViewerViewportInsets() {
+  if (!isCompactViewport()) {
+    return {
+      top: 0,
+      bottom: 0,
+      side: Math.max(16, window.innerWidth * 0.04)
+    };
+  }
+
+  const toolbarHeight = viewerToolbarEl ? viewerToolbarEl.getBoundingClientRect().height : 0;
+  const metaHeight = viewerMetaPanelEl ? viewerMetaPanelEl.getBoundingClientRect().height : 0;
+
+  return {
+    top: Math.max(12, toolbarHeight + 12),
+    bottom: Math.max(12, metaHeight + 12),
+    side: 8
+  };
+}
+
 function getZoomTargetRect() {
   const ratio = getViewerRatio();
-  const maxWidth = window.innerWidth * 0.92;
-  const maxHeight = window.innerHeight * 0.92;
+  const insets = getViewerViewportInsets();
+  const maxWidth = Math.max(120, window.innerWidth - insets.side * 2);
+  const maxHeight = Math.max(120, window.innerHeight - insets.top - insets.bottom);
   let width = maxWidth;
   let height = width / ratio;
   if (height > maxHeight) {
     height = maxHeight;
     width = height * ratio;
   }
+  const top = insets.top + (maxHeight - height) / 2;
+  const left = (window.innerWidth - width) / 2;
   return {
-    top: (window.innerHeight - height) / 2,
-    left: (window.innerWidth - width) / 2,
+    top,
+    left,
     width,
     height
   };
@@ -223,12 +252,20 @@ function getItemImageElement(index) {
 function updateViewerResButtons() {
   const currentItem = viewerIndex >= 0 ? filteredItems[viewerIndex] : null;
   const canUhd = Boolean(currentItem && currentItem.hasUhd);
+  const hdLoading = viewerResolutionLoading && viewerResolution === "hd";
+  const uhdLoading = viewerResolutionLoading && viewerResolution === "uhd";
   viewerHdBtn.classList.toggle("active", viewerResolution === "hd");
   viewerUhdBtn.classList.toggle("active", viewerResolution === "uhd");
-  viewerHdBtn.classList.toggle("loading", viewerResolutionLoading && viewerResolution === "hd");
-  viewerUhdBtn.classList.toggle("loading", viewerResolutionLoading && viewerResolution === "uhd");
-  viewerUhdBtn.disabled = !canUhd;
-  viewerUhdBtn.title = canUhd ? "UHD" : "该图片仅支持1080P";
+  viewerHdBtn.classList.toggle("loading", hdLoading);
+  viewerUhdBtn.classList.toggle("loading", uhdLoading);
+  viewerHdBtn.disabled = hdLoading;
+  viewerUhdBtn.disabled = !canUhd || uhdLoading;
+  viewerHdBtn.setAttribute("aria-busy", hdLoading ? "true" : "false");
+  viewerUhdBtn.setAttribute("aria-busy", uhdLoading ? "true" : "false");
+  viewerHdBtn.setAttribute("aria-label", "1080P");
+  viewerUhdBtn.setAttribute("aria-label", !canUhd ? "UHD 不可用，该图片仅支持1080P" : "UHD");
+  viewerHdBtn.title = hdLoading ? "1080P 加载中..." : "1080P";
+  viewerUhdBtn.title = !canUhd ? "该图片仅支持1080P" : (uhdLoading ? "UHD 加载中..." : "UHD");
 }
 
 function setViewerResolutionLoading(isLoading) {
@@ -507,7 +544,7 @@ function setViewerLowImage(src, item) {
     return;
   }
   viewerLowImageEl.src = src;
-  viewerLowImageEl.alt = `${item.title} ${item.dateLabel}`;
+  viewerLowImageEl.alt = "";
 }
 
 function markCardImageReady(img) {
@@ -569,7 +606,7 @@ function loadViewerHighImage(item, token, options = {}) {
       }
       setViewerResolutionLoading(false);
       viewerHighImageEl.src = src;
-      viewerHighImageEl.alt = `${item.title} ${item.dateLabel}`;
+      viewerHighImageEl.alt = "";
       void viewerHighImageEl.offsetWidth;
       viewerHighImageEl.classList.add("reveal");
       viewerUpgradeFxEl.classList.remove("active");
@@ -1083,7 +1120,18 @@ function updateBackToTopVisibility() {
 }
 
 function bindEvents() {
-  searchInput.addEventListener("input", () => {
+  searchInput.addEventListener("compositionstart", () => {
+    searchComposing = true;
+  });
+  searchInput.addEventListener("compositionend", () => {
+    searchComposing = false;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyFilters, 120);
+  });
+  searchInput.addEventListener("input", (event) => {
+    if (searchComposing || event.isComposing) {
+      return;
+    }
     clearTimeout(searchTimer);
     searchTimer = setTimeout(applyFilters, 180);
   });

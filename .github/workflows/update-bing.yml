@@ -2,8 +2,15 @@ name: Update Bing Wallpaper JSON
 
 on:
   schedule:
-    - cron: '0 16 * * *'  # UTC 16:00 = 北京时间 00:00
-  workflow_dispatch:      # 允许手动触发
+    - cron: '0 16 * * *'  # UTC 16:00 = Beijing time 00:00
+  workflow_dispatch:      # Allow manual runs
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-bing-wallpaper-json
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -11,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run update script
         run: bash update_bing.sh
@@ -39,7 +46,7 @@ jobs:
           git add -A
           git commit -m "Update Bing JSON at $current_time"
           git push
-          
+
       - name: Purge jsDelivr cache
         if: env.has_changes == 'true'
         run: |
@@ -53,13 +60,13 @@ jobs:
             "$year/all.json"
             "$year/$month/all.json"
           )
-          echo "🧹 Purging jsDelivr cache for:"
+          echo "Purging jsDelivr cache for:"
           for f in "${files[@]}"; do
             echo " - $f"
           done
           for file_path in "${files[@]}"; do
             purge_url="https://purge.jsdelivr.net/gh/${owner}/${repo}/${file_path}"
-            echo "🔄 Purging: $purge_url"
+            echo "Purging: $purge_url"
             curl -s -w "\nHTTP Status: %{http_code}\n" "$purge_url"
             echo
           done
